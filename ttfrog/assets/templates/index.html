@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>{{ tmpl_context.project_name }}</title>
+
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="{{ tmpl_context.project_name }}">
+    
+      <meta name="og:title" content="{{ tmpl_context.project_name }}">
+      <meta name="og:description" content="{{ tmpl_context.project_name }}">
+      <meta name="og:url" content="">
+      <meta name="og:type" content="text">
+      <meta name="og:provider_name" content="{{ tmpl_context.project_name }}">
+      <!--
+      <meta name="og:image" content="/static/45.svg">
+      -->
+    
+      <link rel='stylesheet' href='/static/styles.css' />
+    
+      <!--
+      <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+      <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+      <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+      -->
+    </head>
+    <body>
+        <h1>{{ tmpl_context.project_name }}: {{ page }}</h1>
+        <pre>
+        {{ content }}
+        </pre>
+    </body>
+</html>
