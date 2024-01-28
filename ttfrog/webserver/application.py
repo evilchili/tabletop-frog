@@ -7,8 +7,9 @@ from tg.util.bunch import Bunch
 
 from wsgiref.simple_server import make_server
 import webhelpers2
+import tw2.core
 
-from ttfrog.webserver import controllers
+from ttfrog.webserver.controllers import RootController
 from ttfrog.db import db
 import ttfrog.path
 
@@ -28,7 +29,7 @@ def application():
     config.update_blueprint({
 
         # rendering
-        'root_controller': controllers.RootController(),
+        'root_controller': RootController(),
         'default_renderer': 'jinja',
         'renderers': ['jinja'],
         'tg.jinja_filters': {},
@@ -37,7 +38,7 @@ def application():
         # helpers
         'app_globals': app_globals,
         'helpers': webhelpers2,
-        'tw2.enabled': True,
+        'use_toscawidgets2': True,
 
         # assets
         'serve_static': True,
@@ -51,7 +52,9 @@ def application():
         'sqlalchemy.url': db.url,
         'model': db,
     })
-    return config.make_wsgi_app()
+
+    # wrap the core wsgi app in a ToscaWidgets2 app
+    return tw2.core.make_middleware(config.make_wsgi_app(), default_engine='jinja')
 
 
 def start(host: str, port: int, debug: bool = False) -> None:

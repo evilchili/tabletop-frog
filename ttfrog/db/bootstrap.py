@@ -10,7 +10,11 @@ data = {
     'ancestry':  [
         {'name': 'human'},
         {'name': 'dragonborn'},
+        {'name': 'tiefling'},
     ],
+    'character': [
+        {'name': 'Sabetha', 'ancestry_name': 'tiefling', 'level': 10, 'str': 10, 'dex': 10, 'con': 10, 'int': 10, 'wis': 10, 'cha': 10},
+    ]
 }
 
 

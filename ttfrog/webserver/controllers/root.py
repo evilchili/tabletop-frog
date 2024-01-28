@@ -2,10 +2,12 @@ from tg import expose
 from tg import TGController
 from tg import tmpl_context
 from ttfrog.db import db
-from ttfrog.db.schema import Character
+from ttfrog.webserver.controllers.character_sheet import CharacterSheetController
 
 
 class RootController(TGController):
+
+    sheet = CharacterSheetController()
 
     def _before(self, *args, **kwargs):
         tmpl_context.project_name = 'TableTop Frog'

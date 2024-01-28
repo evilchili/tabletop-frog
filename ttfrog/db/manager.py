@@ -1,4 +1,5 @@
 from functools import cached_property
+import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -30,6 +31,13 @@ class SQLDatabaseManager:
 
     def query(self, *args, **kwargs):
         return self.DBSession.query(*args, **kwargs)
+
+    def update(self, table, **kwargs):
+        stmt = table.update().values(**kwargs)
+        logging.debug(stmt)
+        result = self.DBSession.execute(stmt)
+        self.DBSession.commit()
+        return result
 
     def init_model(self, engine=None):
         metadata.create_all(bind=engine or self.engine)
