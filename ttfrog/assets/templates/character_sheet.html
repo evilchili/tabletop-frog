@@ -1,5 +1,15 @@
+<div style='float:left; max-width:20%'>
+    <ul>
+    {% for char in all_characters %}
+    <li><a href="/sheet/{{char['slug']}}/{{char['name']}}">{{ char['name'] }}</a></li>
+    {% endfor %}
+</div>
+<div>
 <h1>{{ character.name }}</h1>
 {{ form.display(value=character) }}
+{{ flash }}
+
 <pre>
 {{ character }}
 </pre>
+</div>

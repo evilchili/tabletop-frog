@@ -9,7 +9,7 @@ from wsgiref.simple_server import make_server
 import webhelpers2
 import tw2.core
 
-from ttfrog.webserver.controllers import RootController
+from ttfrog.webserver.controllers.root import RootController
 from ttfrog.db import db
 import ttfrog.path
 

@@ -14,7 +14,8 @@ metadata = MetaData()
 Ancestry = Table(
     "ancestry",
     metadata,
-    Column("name", String, primary_key=True),
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("name", String, index=True, unique=True),
     Column("slug", String, index=True, unique=True),
     Column("description", UnicodeText),
 )
