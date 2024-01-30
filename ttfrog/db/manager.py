@@ -1,15 +1,21 @@
+import transaction
 import base64
 import hashlib
 import logging
 
 from functools import cached_property
 
+from pyramid_sqlalchemy import Session
+from pyramid_sqlalchemy import init_sqlalchemy
+from pyramid_sqlalchemy import metadata as _metadata
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 from ttfrog.path import database
-from ttfrog.db.schema import metadata
+import ttfrog.db.schema
+
+ttfrog.db.schema
 
 
 class SQLDatabaseManager:
@@ -22,30 +28,34 @@ class SQLDatabaseManager:
 
     @cached_property
     def engine(self):
-        return create_engine(self.url, future=True)
+        return create_engine(self.url)
 
     @cached_property
-    def DBSession(self):
-        maker = sessionmaker(bind=self.engine, future=True, autoflush=True)
-        return scoped_session(maker)
+    def session(self):
+        return Session
+
+    @cached_property
+    def metadata(self):
+        return _metadata
 
     @cached_property
     def tables(self):
-        return dict((t.name, t) for t in metadata.sorted_tables)
+        return dict((t.name, t) for t in self.metadata.sorted_tables)
 
     def query(self, *args, **kwargs):
-        return self.DBSession.query(*args, **kwargs)
+        return self.session.query(*args, **kwargs)
 
     def execute(self, statement) -> tuple:
-        logging.debug(statement)
+        logging.info(statement)
         result = None
         error = None
         try:
-            result = self.DBSession.execute(statement)
-            self.DBSession.commit()
+            with transaction.manager as tx:
+                result = self.session.execute(statement)
+                tx.commit()
         except IntegrityError as exc:
             logging.error(exc)
-            error = "An error occurred when saving changes."
+            error = "I AM ERROR."
         return result, error
 
     def insert(self, table, **kwargs) -> tuple:
@@ -57,10 +67,6 @@ class SQLDatabaseManager:
         stmt = table.update().values(**kwargs).where(table.columns.id == primary_key)
         return self.execute(stmt)
 
-    def init_model(self, engine=None):
-        metadata.create_all(bind=engine or self.engine)
-        return self.DBSession
-
     def slugify(self, rec: dict) -> str:
         """
         Create a uniquish slug from a dictionary.
@@ -68,6 +74,9 @@ class SQLDatabaseManager:
         sha1bytes = hashlib.sha1(str(rec['id']).encode())
         return base64.urlsafe_b64encode(sha1bytes.digest()).decode("ascii")[:10]
 
+    def init(self):
+        init_sqlalchemy(self.engine)
+        self.metadata.create_all(self.engine)
 
     def __getattr__(self, name: str):
         try:
@@ -75,14 +84,5 @@ class SQLDatabaseManager:
         except KeyError:
             raise AttributeError(f"{self} does not contain the attribute '{name}'.")
 
-    def __enter__(self):
-        self.init_model(self.engine)
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.DBSession:
-            self.DBSession.close()
-
 
 db = SQLDatabaseManager()
-session = db.DBSession

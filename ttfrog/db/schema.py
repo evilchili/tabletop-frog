@@ -9,29 +9,27 @@ from sqlalchemy import CheckConstraint
 # from sqlalchemy import PrimaryKeyConstraint
 # from sqlalchemy import DateTime
 
-metadata = MetaData()
+from pyramid_sqlalchemy import BaseObject
 
-Ancestry = Table(
-    "ancestry",
-    metadata,
-    Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("name", String, index=True, unique=True),
-    Column("slug", String, index=True, unique=True),
-    Column("description", UnicodeText),
-)
+class Ancestry(BaseObject):
+    __tablename__ = "ancestry"
 
-Character = Table(
-    "character",
-    metadata,
-    Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("slug", String, index=True, unique=True),
-    Column("ancestry_name", Integer, ForeignKey("ancestry.name")),
-    Column("name", String),
-    Column("level", Integer, CheckConstraint('level > 0 AND level <= 20')),
-    Column("str", Integer, CheckConstraint('str >=0')),
-    Column("dex", Integer, CheckConstraint('dex >=0')),
-    Column("con", Integer, CheckConstraint('con >=0')),
-    Column("int", Integer, CheckConstraint('int >=0')),
-    Column("wis", Integer, CheckConstraint('wis >=0')),
-    Column("cha", Integer, CheckConstraint('cha >=0')),
-)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, index=True, unique=True)
+    slug = Column(String, index=True, unique=True)
+
+
+class Character(BaseObject):
+    __tablename__ = "character"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    slug = Column(String, index=True, unique=True)
+    ancestry = Column(String, ForeignKey("ancestry.name"))
+    name = Column(String)
+    level = Column(Integer, CheckConstraint('level > 0 AND level <= 20'))
+    str = Column(Integer, CheckConstraint('str >=0'))
+    dex = Column(Integer, CheckConstraint('dex >=0'))
+    con = Column(Integer, CheckConstraint('con >=0'))
+    int = Column(Integer, CheckConstraint('int >=0'))
+    wis = Column(Integer, CheckConstraint('wis >=0'))
+    cha = Column(Integer, CheckConstraint('cha >=0'))
