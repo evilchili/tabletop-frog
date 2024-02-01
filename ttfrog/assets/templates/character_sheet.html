@@ -1,14 +1,11 @@
 {% extends "base.html" %}
+{% from "list.html" import build_list %}
 
 {% block content %}
-<div style='float:left; max-width:20%;height: 90%'>
-    <ul>
-    {% for char in all_characters %}
-    <li><a href="/sheet/{{char['slug']}}/{{char['name']}}">{{ char['name'] }}</a></li>
-    {% endfor %}
-    </ul>
-</div>
-<div>
+
+{{ build_list(all_records) }}
+
+<div style='float:left;'>
 <h1>{{ record.name }}</h1>
 
 <form name="character_sheet" method="post" novalidate class="form">
@@ -18,8 +15,9 @@
     Error: {{ form.errors['process'] |join(',') }}
     {% endif %}
     <ul>
-        <li>{{form.name.label}}: {{ form.name }} {{form.errors['name'] | join(',') }}</li>
-        <li>{{form.level.label}}: {{ form.level }} {{form.errors['level'] | join(',') }}<//li>
+        {% for field in form %}
+            <li>{{ field.label }}: {{ field }} {{ field.errors|join(',') }}</li>
+        {% endfor %}
     </ul>
     <button type="submit">Submit</button>
 </form>
@@ -27,9 +25,11 @@
 {% endblock %}
 
 {% block debug %}
+<div style='clear:both;display:block;'>
 <h2>Debug</h2>
 <h3>Record</h3>
 <pre>{{ record }}</pre>
 <h3>Config</h3>
 <pre>{{ config }}</pre>
+</div>
 {% endblock %}
