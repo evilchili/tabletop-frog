@@ -1,4 +1,3 @@
-import logging
 from collections import defaultdict
 
 from wtforms_sqlalchemy.orm import model_form
@@ -26,7 +25,6 @@ class BaseController:
     def configure(self):
         self.load_from_id()
 
-
     def load_from_id(self):
         if not self.request.POST['id']:
             return
@@ -37,28 +35,12 @@ class BaseController:
         if not self.model:
             return ''
 
-        # no user submission to process
-        if self.request.method != 'POST':
-            return self.model_form(obj=self.record)
-
-        # process submission
-        form = self.model_form(self.request.POST, obj=self.record)
-        if self.model.validate(form):
-            form.populate_obj(self.record)
-            error = self.save_changes()
-            if error:
-                form.errors['process'] = error
-        return form
-
-    def save_changes(self):
-        try:
-            with db.transaction():
-                for (key, val) in self.request.POST.items():
-                    if hasattr(self.record, key):
-                        setattr(self.record, key, val)
-        except Exception as e:
-            return e
-        return None
+        if self.request.method == 'POST':
+            form = self.model_form(self.request.POST, obj=self.record)
+            if self.model.validate(form):
+                form.populate_obj(self.record)
+                return form
+        return self.model_form(obj=self.record)
 
     def output(self, **kwargs) -> dict:
         return dict(

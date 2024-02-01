@@ -1,5 +1,3 @@
-from itertools import chain
-
 from pyramid_sqlalchemy import BaseObject
 from wtforms import validators
 
