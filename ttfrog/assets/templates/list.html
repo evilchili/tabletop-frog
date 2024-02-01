@@ -1,0 +1,10 @@
+{% macro build_list(records) %}
+<div style='float:left; min-height: 90%; margin-right:5em;'>
+    <ul>
+        <li><a href="/sheet/">Create a Character</a></li>
+    {% for rec in records %}
+        <li><a href="/sheet/{{rec['slug']}}/{{rec['name']}}">{{ rec['name'] }}</a></li>
+    {% endfor %}
+    </ul>
+</div>
+{% endmacro %}
