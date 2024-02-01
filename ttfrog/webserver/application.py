@@ -10,9 +10,14 @@ from ttfrog.webserver.routes import routes
 def configuration():
     config = Configurator(settings={
         'sqlalchemy.url': db.url,
+        'jinja2.directories': 'ttfrog.assets:templates/'
     })
     config.include('pyramid_tm')
     config.include('pyramid_sqlalchemy')
+    config.include('pyramid_jinja2')
+    config.add_static_view(name='/static', path='ttfrog.assets:static/')
+    config.add_jinja2_renderer('.html', settings_prefix='jinja2.')
+
     return config
 
 

@@ -1,8 +1,8 @@
 import transaction
 import base64
 import hashlib
-import logging
 
+from contextlib import contextmanager
 from functools import cached_property
 
 from pyramid_sqlalchemy import Session
@@ -10,7 +10,7 @@ from pyramid_sqlalchemy import init_sqlalchemy
 from pyramid_sqlalchemy import metadata as _metadata
 
 from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError
+# from sqlalchemy.exc import IntegrityError
 
 from ttfrog.path import database
 import ttfrog.db.schema
@@ -30,7 +30,7 @@ class SQLDatabaseManager:
     def engine(self):
         return create_engine(self.url)
 
-    @cached_property
+    @property
     def session(self):
         return Session
 
@@ -42,30 +42,18 @@ class SQLDatabaseManager:
     def tables(self):
         return dict((t.name, t) for t in self.metadata.sorted_tables)
 
+    @contextmanager
+    def transaction(self):
+        with transaction.manager as tm:
+            yield tm
+            try:
+                tm.commit()
+            except Exception:
+                tm.abort()
+                raise
+
     def query(self, *args, **kwargs):
         return self.session.query(*args, **kwargs)
-
-    def execute(self, statement) -> tuple:
-        logging.info(statement)
-        result = None
-        error = None
-        try:
-            with transaction.manager as tx:
-                result = self.session.execute(statement)
-                tx.commit()
-        except IntegrityError as exc:
-            logging.error(exc)
-            error = "I AM ERROR."
-        return result, error
-
-    def insert(self, table, **kwargs) -> tuple:
-        stmt = table.insert().values(**kwargs)
-        return self.execute(stmt)
-
-    def update(self, table, **kwargs):
-        primary_key = kwargs.pop('id')
-        stmt = table.update().values(**kwargs).where(table.columns.id == primary_key)
-        return self.execute(stmt)
 
     def slugify(self, rec: dict) -> str:
         """

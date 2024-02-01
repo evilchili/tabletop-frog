@@ -1,15 +1,35 @@
-<div style='float:left; max-width:20%'>
+{% extends "base.html" %}
+
+{% block content %}
+<div style='float:left; max-width:20%;height: 90%'>
     <ul>
     {% for char in all_characters %}
     <li><a href="/sheet/{{char['slug']}}/{{char['name']}}">{{ char['name'] }}</a></li>
     {% endfor %}
+    </ul>
 </div>
 <div>
-<h1>{{ character.name }}</h1>
-{{ form.display(value=character) }}
-{{ flash }}
+<h1>{{ record.name }}</h1>
 
-<pre>
-{{ character }}
-</pre>
+<form name="character_sheet" method="post" novalidate class="form">
+    {{ form.csrf_token }}
+
+    {% if 'process' in form.errors %}
+    Error: {{ form.errors['process'] |join(',') }}
+    {% endif %}
+    <ul>
+        <li>{{form.name.label}}: {{ form.name }} {{form.errors['name'] | join(',') }}</li>
+        <li>{{form.level.label}}: {{ form.level }} {{form.errors['level'] | join(',') }}<//li>
+    </ul>
+    <button type="submit">Submit</button>
+</form>
 </div>
+{% endblock %}
+
+{% block debug %}
+<h2>Debug</h2>
+<h3>Record</h3>
+<pre>{{ record }}</pre>
+<h3>Config</h3>
+<pre>{{ config }}</pre>
+{% endblock %}

@@ -5,6 +5,7 @@ from ttfrog.db.manager import db
 from ttfrog.db import schema
 
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.inspection import inspect
 
 # move this to json or whatever
 data = {
@@ -28,16 +29,14 @@ def bootstrap():
         model = getattr(schema, table)
 
         for rec in records:
-            with transaction.manager as tx:
-                obj = model(**rec)
-                db.session.add(obj)
-                obj.slug = db.slugify(rec)
-                try:
-                    tx.commit()
-                except IntegrityError as e:
-                    tx.abort()
-                    if 'UNIQUE constraint failed' in str(e):
-                        logging.info(f"Skipping existing {table} {rec}")
-                        continue
-                    raise
-            logging.info(f"Created {table} {rec}")
+            obj = model(**rec)
+            try:
+                with db.transaction():
+                    db.session.add(obj)
+                    obj.slug = db.slugify(rec)
+            except IntegrityError as e:
+                if 'UNIQUE constraint failed' in str(e):
+                    logging.info(f"Skipping existing {table} {obj}")
+                    continue
+                raise
+            logging.info(f"Created {table} {obj}")

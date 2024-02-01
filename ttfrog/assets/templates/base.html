@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>{{ config['project_name'] }}{% block title %}{% endblock %}</title>
+    <meta name="og:provider_name" content="{{ config['project_name'] }}">
+    <link rel='stylesheet' href="{{config['static_url']}}/styles.css" />
+    {% block headers %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    {% block debug %}{% endblock %}
+</body>
+</html>

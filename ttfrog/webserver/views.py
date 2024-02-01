@@ -8,3 +8,9 @@ from ttfrog.db.schema import Ancestry
 def index(request):
     ancestries = [a.name for a in db.session.query(Ancestry).all()]
     return Response(','.join(ancestries))
+
+
+@view_config(route_name='sheet', renderer='character_sheet.html')
+def sheet(request):
+    sheet = request.context
+    return sheet.response()
