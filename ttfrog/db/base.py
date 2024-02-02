@@ -1,5 +1,26 @@
+import nanoid
+from nanoid_dictionary import human_alphabet
+
 from pyramid_sqlalchemy import BaseObject
 from wtforms import validators
+from slugify import slugify
+
+from sqlalchemy import Column
+from sqlalchemy import String
+
+def genslug():
+    return nanoid.generate(human_alphabet[2:], 5)
+
+
+class SlugMixin:
+    slug = Column(String, index=True, unique=True, default=genslug)
+
+    @property
+    def uri(self):
+        return '-'.join([
+            self.slug,
+            slugify(self.name.title().replace(' ', ''), ok='', only_ascii=True, lower=False)
+        ])
 
 
 class IterableMixin:
@@ -50,4 +71,4 @@ class FormValidatorMixin:
 
 
 # class Table(*Bases):
-Bases = [BaseObject, IterableMixin, FormValidatorMixin]
+Bases = [BaseObject, IterableMixin, FormValidatorMixin, SlugMixin]

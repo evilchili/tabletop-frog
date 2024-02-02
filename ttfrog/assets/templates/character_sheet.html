@@ -3,19 +3,19 @@
 
 {% block content %}
 
-{{ build_list(all_records) }}
+{{ build_list(c) }}
 
 <div style='float:left;'>
-<h1>{{ record.name }}</h1>
+<h1>{{ c['record'].name }}</h1>
 
 <form name="character_sheet" method="post" novalidate class="form">
-    {{ form.csrf_token }}
+    {{ c['form'].csrf_token }}
 
-    {% if 'process' in form.errors %}
-    Error: {{ form.errors['process'] |join(',') }}
+    {% if 'process' in c['form'].errors %}
+    Error: {{ c['form'].errors['process'] |join(',') }}
     {% endif %}
     <ul>
-        {% for field in form %}
+        {% for field in c['form'] %}
             <li>{{ field.label }}: {{ field }} {{ field.errors|join(',') }}</li>
         {% endfor %}
     </ul>
@@ -27,9 +27,7 @@
 {% block debug %}
 <div style='clear:both;display:block;'>
 <h2>Debug</h2>
-<h3>Record</h3>
-<pre>{{ record }}</pre>
-<h3>Config</h3>
-<pre>{{ config }}</pre>
-</div>
+<pre>
+{{ c }}
+</pre>
 {% endblock %}

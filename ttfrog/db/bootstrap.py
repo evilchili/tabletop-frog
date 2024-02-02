@@ -1,11 +1,9 @@
 import logging
-import transaction
 
 from ttfrog.db.manager import db
 from ttfrog.db import schema
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.inspection import inspect
 
 # move this to json or whatever
 data = {
@@ -33,7 +31,6 @@ def bootstrap():
             try:
                 with db.transaction():
                     db.session.add(obj)
-                    obj.slug = db.slugify(rec)
             except IntegrityError as e:
                 if 'UNIQUE constraint failed' in str(e):
                     logging.info(f"Skipping existing {table} {obj}")

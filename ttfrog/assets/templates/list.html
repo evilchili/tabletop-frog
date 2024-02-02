@@ -1,9 +1,9 @@
-{% macro build_list(records) %}
+{% macro build_list(c) %}
 <div style='float:left; min-height: 90%; margin-right:5em;'>
     <ul>
-        <li><a href="/sheet/">Create a Character</a></li>
-    {% for rec in records %}
-        <li><a href="/sheet/{{rec['slug']}}/{{rec['name']}}">{{ rec['name'] }}</a></li>
+        <li><a href="{{c['routes']['sheet']}}">Create a Character</a></li>
+    {% for rec in c['all_records'] %}
+    <li><a href="{{c['routes']['sheet']}}/{{rec['uri']}}">{{ rec['uri'] }}</a></li>
     {% endfor %}
     </ul>
 </div>

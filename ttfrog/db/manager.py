@@ -30,7 +30,7 @@ class SQLDatabaseManager:
     def engine(self):
         return create_engine(self.url)
 
-    @property
+    @cached_property
     def session(self):
         return Session
 
