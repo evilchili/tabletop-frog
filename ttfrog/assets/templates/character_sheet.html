@@ -10,16 +10,14 @@
 
 <form name="character_sheet" method="post" novalidate class="form">
     {{ c.form.csrf_token }}
-
-    {% if 'process' in c.form.errors %}
-    Error: {{ c.form.errors.process |join(',') }}
-    {% endif %}
     <ul>
         {% for field in c.form %}
+            {% if field.name not in ['save', 'delete'] %}
             <li>{{ field.label }}: {{ field }} {{ field.errors|join(',') }}</li>
+            {% endif %}
         {% endfor %}
     </ul>
-    <button type="submit">Submit</button>
+    {{ c.form.save }} &nbsp; {{ c.form.delete }}
 </form>
 </div>
 {% endblock %}

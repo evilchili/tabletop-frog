@@ -52,6 +52,10 @@ class SQLDatabaseManager:
                 tm.abort()
                 raise
 
+    def add(self, *args, **kwargs):
+        self.session.add(*args, **kwargs)
+        self.session.flush()
+
     def query(self, *args, **kwargs):
         return self.session.query(*args, **kwargs)
 

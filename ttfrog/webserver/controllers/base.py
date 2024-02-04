@@ -104,16 +104,34 @@ class BaseController:
             )
         })
 
-    def response(self):
-        if not (self.request.POST and self.form):
+    def save(self):
+        if not self.form.save.data:
             return
-        if self.form.validate():
-            self.form.populate_obj(self.record)
-            self.coerce_foreign_keys()
-            if not self.record.id:
-                with db.transaction():
-                    db.session.add(self.record)
-                    db.session.flush()
-                    logging.debug(f"Added {self.record = }")
-                    location = f"{self.request.current_route_path()}/{self.record.uri}"
-                return HTTPFound(location=location)
+        if not self.form.validate():
+            return
+        self.form.populate_obj(self.record)
+        self.coerce_foreign_keys()
+        if self.record.id:
+            return
+        with db.transaction():
+            db.add(self.record)
+            logging.debug(f"Added {self.record = }")
+            location = f"{self.request.current_route_path()}/{self.record.uri}"
+            return HTTPFound(location=location)
+
+    def delete(self):
+        if not self.record.id:
+            return
+        with db.transaction():
+            db.query(self.model).filter_by(id=self.record.id).delete()
+            logging.debug(f"Deleted {self.record = }")
+            location = self.request.current_route_path()
+            return HTTPFound(location=location)
+
+    def response(self):
+        if not self.form:
+            return
+        elif self.form.save.data:
+            return self.save()
+        elif self.form.delete.data:
+            return self.delete()
