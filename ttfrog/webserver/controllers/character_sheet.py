@@ -1,8 +1,6 @@
-from ttfrog.webserver.controllers.base import BaseController, query_factory
+from ttfrog.webserver.controllers.base import BaseController, DeferredSelectField
 from ttfrog.db.schema import Character, Ancestry
-from ttfrog.db.manager import db
-from wtforms_alchemy import ModelForm, QuerySelectField
-from wtforms.validators import InputRequired
+from wtforms_alchemy import ModelForm
 from wtforms.fields import SubmitField
 
 
@@ -11,14 +9,9 @@ class CharacterForm(ModelForm):
         model = Character
         exclude = ['slug']
 
-    def get_session():
-        return db.session
-
     save = SubmitField()
     delete = SubmitField()
-
-    ancestry = QuerySelectField('Ancestry', validators=[InputRequired()],
-                                query_factory=query_factory(Ancestry), get_label='name')
+    ancestry = DeferredSelectField('Ancestry', model=Ancestry, coerce=str, validate_choice=True)
 
 
 class CharacterSheet(BaseController):
