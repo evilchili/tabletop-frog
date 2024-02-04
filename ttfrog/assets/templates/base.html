@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>{{ c['config']['project_name'] }}{% block title %}{% endblock %}</title>
-    <meta name="og:provider_name" content="{{ c['config']['project_name'] }}">
-    <link rel='stylesheet' href="{{c['config']['static_url']}}/styles.css" />
+    <title>{{ c.config.project_name }}{% block title %}{% endblock %}</title>
+    <meta name="og:provider_name" content="{{ c.config.project_name }}">
+    <link rel='stylesheet' href="{{c.routes.static}}/styles.css" />
     {% block headers %}{% endblock %}
 </head>
 <body>

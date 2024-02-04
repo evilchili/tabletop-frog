@@ -9,13 +9,13 @@
 <h1>{{ c['record'].name }}</h1>
 
 <form name="character_sheet" method="post" novalidate class="form">
-    {{ c['form'].csrf_token }}
+    {{ c.form.csrf_token }}
 
-    {% if 'process' in c['form'].errors %}
-    Error: {{ c['form'].errors['process'] |join(',') }}
+    {% if 'process' in c.form.errors %}
+    Error: {{ c.form.errors.process |join(',') }}
     {% endif %}
     <ul>
-        {% for field in c['form'] %}
+        {% for field in c.form %}
             <li>{{ field.label }}: {{ field }} {{ field.errors|join(',') }}</li>
         {% endfor %}
     </ul>

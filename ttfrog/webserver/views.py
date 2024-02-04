@@ -12,5 +12,5 @@ def index(request):
 
 @view_config(route_name='sheet', renderer='character_sheet.html')
 def sheet(request):
-    sheet = request.context
-    return sheet.response()
+    controller = request.context
+    return controller.response() or controller.template_context()

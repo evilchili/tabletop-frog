@@ -23,6 +23,7 @@ transaction = "^4.0"
 unicode-slugify = "^0.1.5"
 nanoid = "^2.0.0"
 nanoid-dictionary = "^2.4.0"
+wtforms-alchemy = "^0.18.0"
 
 
 [build-system]

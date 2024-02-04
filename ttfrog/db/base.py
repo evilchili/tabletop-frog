@@ -8,6 +8,7 @@ from slugify import slugify
 from sqlalchemy import Column
 from sqlalchemy import String
 
+
 def genslug():
     return nanoid.generate(human_alphabet[2:], 5)
 
@@ -37,38 +38,5 @@ class IterableMixin:
         return f"{self.__class__.__name__}: {str(dict(self))}"
 
 
-class FormValidatorMixin:
-    """
-    Add form validation capabilities using the .info attributes of columns.
-    """
-
-    # column.info could contain any of these keywords. define the list of validators that should apply
-    # whenever we encounter one such keyword.
-    _validators_by_keyword = {
-        'min': [validators.NumberRange],
-        'max': [validators.NumberRange],
-    }
-
-    @classmethod
-    def validate(cls, form):
-        for name, column in cls.__mapper__.columns.items():
-            if name not in form._fields:
-                continue
-
-            # step through the info keywords and create a deduped list of validator classes that
-            # should apply to this form field. This prevents adding unnecessary copies of the same
-            # validator when two or more keywords map to the same one.
-            extras = set()
-            for key in column.info.keys():
-                for val in cls._validators_by_keyword.get(key, []):
-                    extras.add(val)
-
-            # Add an instance of every unique validator for this column to the associated form field.
-            form._fields[name].validators.extend([v(**column.info) for v in extras])
-
-        # return the results of the form validation,.
-        return form.validate()
-
-
 # class Table(*Bases):
-Bases = [BaseObject, IterableMixin, FormValidatorMixin, SlugMixin]
+Bases = [BaseObject, IterableMixin, SlugMixin]

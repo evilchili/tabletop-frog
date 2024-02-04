@@ -8,9 +8,9 @@ from sqlalchemy.exc import IntegrityError
 # move this to json or whatever
 data = {
     'Ancestry':  [
-        {'id': 1, 'name': 'human'},
-        {'id': 2, 'name': 'dragonborn'},
-        {'id': 3, 'name': 'tiefling'},
+        {'name': 'human'},
+        {'name': 'dragonborn'},
+        {'name': 'tiefling'},
     ],
     'Character': [
         {'id': 1, 'name': 'Sabetha', 'ancestry': 'tiefling', 'level': 10, 'str': 10, 'dex': 10, 'con': 10, 'int': 10, 'wis': 10, 'cha': 10},
@@ -31,9 +31,9 @@ def bootstrap():
             try:
                 with db.transaction():
                     db.session.add(obj)
+                    logging.info(f"Created {table} {obj}")
             except IntegrityError as e:
                 if 'UNIQUE constraint failed' in str(e):
                     logging.info(f"Skipping existing {table} {obj}")
                     continue
                 raise
-            logging.info(f"Created {table} {obj}")

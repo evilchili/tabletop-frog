@@ -11,8 +11,10 @@ from ttfrog.db.base import Bases
 class Ancestry(*Bases):
     __tablename__ = "ancestry"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, index=True, unique=True)
+    name = Column(String, primary_key=True, unique=True)
+
+    def __repr__(self):
+        return str(self.name)
 
 
 class Character(*Bases):
