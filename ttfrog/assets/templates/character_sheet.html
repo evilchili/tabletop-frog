@@ -5,27 +5,71 @@
 
 {{ build_list(c) }}
 
-<div style='float:left;'>
-<h1>{{ c['record'].name }}</h1>
-
+<div id='character_sheet'>
 <form name="character_sheet" method="post" novalidate class="form">
-    {{ c.form.csrf_token }}
-    <ul>
+
+<div class='banner'>
+    <div><img id='portrait' /></div>
+    <div>
+        <h1>{{ c.record.name }}</h1>
+        {{ c.form.ancestry }} {{ c.record.character_class|join(' / ') }} &nbsp; Level {{ c.form.level }}
+    </div>
+</div>
+<div class='statblock'>
+    <div class='stats'>
+        <div class='cards'>
+{% for stat in ['str', 'dex', 'con', 'int', 'wis', 'cha'] %}
+            <div class='card'>
+                <div class='label'>{{ c.form[stat].label }}</div>
+                {{ c.form[stat] }}
+                <div id='{{stat}}_bonus'></div>
+            </div>
+{% endfor %}
+            <div class='card'>
+                <div class='label'>AC</div>
+                {{ c.form.armor_class }}
+            </div>
+        </div>
+        <ul>
+        <li>Initiative: <span id='initiative'>3</span></li>
+        <li>Proficiency Bonus: <span id='proficiency_bonus'></span></li>
+        <li>Spell Save DC: <span id='spell_save_dc'></span></li>
+        <li>Saving Throws: <span id='saving_throws'>{{ c.record.saving_throws |join(', ') }}</span></li>
+        <li>Skills: <span id='skills'>{{ c.record.skills |join(', ') }}</span></li>
         {% for field in c.form %}
-            {% if field.name not in ['save', 'delete'] %}
+            {% if field.name in ['proficiencies', 'speed', 'passive_perception', 'passive_insight', 'passive_investigation'] %}
             <li>{{ field.label }}: {{ field }} {{ field.errors|join(',') }}</li>
             {% endif %}
         {% endfor %}
-    </ul>
-    {{ c.form.save }} &nbsp; {{ c.form.delete }}
-</form>
+        </ul>
+    </div>
+    <div class='sidebar'>
+        <div class='cards'>
+            <div class='card'>
+                <div class='label'>HP</div>
+                {{ c.form.max_hit_points }} / {{ c.form.hit_points }}
+            </div>
+            <div class='card'>
+                <div class='label'>TEMP HP</div>
+                {{ c.form.temp_hit_points }}
+            </div>
+        </div>
+    </div>
 </div>
+
+<hr>
+
+    {{ c.form.save }} &nbsp; {{ c.form.delete }}
+</div>
+{{ c.form.csrf_token }}
+</form>
+
 {% endblock %}
 
 {% block debug %}
 <div style='clear:both;display:block;'>
 <h2>Debug</h2>
-<pre>
+<code>
 {{ c }}
-</pre>
+</code>
 {% endblock %}

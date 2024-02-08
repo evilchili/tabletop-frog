@@ -2,12 +2,26 @@
 <html lang="en">
 <head>
     <title>{{ c.config.project_name }}{% block title %}{% endblock %}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="og:provider_name" content="{{ c.config.project_name }}">
-    <link rel='stylesheet' href="{{c.routes.static}}/styles.css" />
+    {% for resource in c.resources %}
+    <link rel='preload' href="{{c.routes.static}}/{{resource['uri']}}" as="{{resource['type']}}"/>
+    {% if resource['type'] == 'style' %}
+    <link rel='stylesheet' href="{{c.routes.static}}/{{resource['uri']}}" />
+    {% endif %}
+    {% endfor %}
     {% block headers %}{% endblock %}
 </head>
 <body>
+    <div id='content'>
     {% block content %}{% endblock %}
+    </div>
     {% block debug %}{% endblock %}
+{% for resource in c.resources %}
+    {% if resource['type'] == 'script' %}
+    <script type="text/javascript" src="{{c.routes.static}}/{{resource['uri']}}"></script>
+    {% endif %}
+{% endfor %}
 </body>
 </html>

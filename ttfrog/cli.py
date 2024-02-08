@@ -75,7 +75,6 @@ def setup(context: typer.Context):
     bootstrap()
 
 
-
 @app.command()
 def serve(
     context: typer.Context,
@@ -98,8 +97,10 @@ def serve(
 
     # delay loading the app until we have configured our environment
     from ttfrog.webserver import application
+    from ttfrog.db.bootstrap import bootstrap
 
     print("Starting TableTop Frog server...")
+    bootstrap()
     application.start(host=host, port=port, debug=debug)
 
 

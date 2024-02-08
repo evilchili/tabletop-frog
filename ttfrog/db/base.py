@@ -1,12 +1,10 @@
 import nanoid
 from nanoid_dictionary import human_alphabet
-
-from pyramid_sqlalchemy import BaseObject
-from wtforms import validators
-from slugify import slugify
-
 from sqlalchemy import Column
 from sqlalchemy import String
+from sqlalchemy import String
+from pyramid_sqlalchemy import BaseObject
+from slugify import slugify
 
 
 def genslug():
@@ -36,6 +34,32 @@ class IterableMixin:
 
     def __repr__(self):
         return f"{self.__class__.__name__}: {str(dict(self))}"
+
+
+def multivalue_string_factory(name, column=Column(String), separator=';'):
+    """
+    Generate a mixin class that adds a string column with getters and setters
+    that convert list values to strings and back again. Equivalent to:
+
+        class MultiValueString:
+            _name = column
+
+            @property
+            def name_property(self):
+                return self._name.split(';')
+
+            @name.setter
+            def name(self, val):
+                return ';'.join(val)
+    """
+    attr = f"_{name}"
+    prop = property(lambda self: getattr(self, attr).split(separator))
+    setter = prop.setter(lambda self, val: setattr(self, attr, separator.join(val)))
+    return type('MultiValueString', (object, ), {
+        attr: column,
+        f"{name}_property": prop,
+        name: setter,
+    })
 
 
 # class Table(*Bases):

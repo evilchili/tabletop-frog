@@ -5,10 +5,10 @@ from collections import defaultdict
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.interfaces import IRoutesMapper
-from wtforms.fields import SelectField
 
 from ttfrog.attribute_map import AttributeMap
 from ttfrog.db.manager import db
+from ttfrog.db import transaction_log
 
 
 def get_all_routes(request):
@@ -24,12 +24,6 @@ def get_all_routes(request):
         if m:
             routes[route.name] = m .group(0)
     return routes
-
-
-class DeferredSelectField(SelectField):
-    def __init__(self, *args, model=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.choices = db.query(model).all()
 
 
 class BaseController:
@@ -77,6 +71,12 @@ class BaseController:
                 self._form = self.model_form(obj=self.record)
         return self._form
 
+    @property
+    def resources(self):
+        return [
+            {'type': 'style', 'uri': 'css/styles.css'},
+        ]
+
     def configure_for_model(self):
         if 'all_records' not in self.attrs:
             self.attrs['all_records'] = db.query(self.model).all()
@@ -89,6 +89,7 @@ class BaseController:
                 form=self.form,
                 record=self.record,
                 routes=get_all_routes(self.request),
+                resources=self.resources,
                 **self.attrs,
                 **kwargs,
             )
@@ -99,7 +100,9 @@ class BaseController:
             return
         if not self.form.validate():
             return
+        previous = dict(self.record)
         self.form.populate_obj(self.record)
+        transaction_log.record(previous, self.record)
         if self.record.id:
             return
         with db.transaction():

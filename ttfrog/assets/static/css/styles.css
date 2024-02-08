@@ -1,0 +1,112 @@
+body {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+
+#content {
+    margin: 1rem auto;
+    max-width:1280px;
+}
+
+
+a {
+    text-decoration: none;
+    color: #000055;
+}
+a:visited, a:active {
+    color: #000055;
+}
+
+
+ul.nav {
+    background: #e7e7e7;
+    margin: 0;
+    padding: 0.5rem;
+    list-style-type: none;
+    margin-bottom: 0.5rem;
+}
+
+ul.nav li {
+    display: inline;
+    text-align: center;
+    background: #FFF;
+    padding: 0 0.5rem;
+}
+
+#character_sheet {
+    width:50%;
+    display: block;
+}
+
+#character_sheet .statblock {
+    width: 100%;
+    margin-bottom:3rem;
+    display: grid;
+    grid-template-columns: auto 250px;
+    grid-gap: 1rem;
+}
+
+#character_sheet .banner {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    grid-gap: 1rem;
+}
+
+#character_sheet .banner #portrait {
+    width: 64px;
+    height: 64px;
+    background: #e7e7e7;
+}
+
+
+#character_sheet h1 {
+    margin: 0;
+}
+
+#character_sheet .sidebar {
+    min-height: 300px;
+}
+
+#character_sheet input,
+#character_sheet select, 
+#character_sheet textarea {
+    font-weight: bold;
+    border: 0;
+}
+
+.stats .cards {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: auto;
+    grid-gap: 1rem;
+}
+
+.sidebar .cards {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-gap: 1rem;
+    text-align: center;
+}
+
+.cards .card {
+    border: 2px solid #e7e7e7;
+    border-radius: 4px;
+    padding: .5rem;
+}
+
+.card .label {
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.card input {
+    font-size: 1.25em;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
