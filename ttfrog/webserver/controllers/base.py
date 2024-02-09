@@ -6,7 +6,6 @@ from collections import defaultdict
 from pyramid.httpexceptions import HTTPFound
 from pyramid.interfaces import IRoutesMapper
 
-from ttfrog.attribute_map import AttributeMap
 from ttfrog.db.manager import db
 from ttfrog.db import transaction_log
 
@@ -69,6 +68,8 @@ class BaseController:
                 self._form = self.model_form(self.request.POST, obj=self.record)
             else:
                 self._form = self.model_form(obj=self.record)
+                if not self.record.id:
+                    self._form.process()
         return self._form
 
     @property
@@ -82,18 +83,16 @@ class BaseController:
             self.attrs['all_records'] = db.query(self.model).all()
 
     def template_context(self, **kwargs) -> dict:
-        return AttributeMap.from_dict({
-            'c': dict(
-                config=self.config,
-                request=self.request,
-                form=self.form,
-                record=self.record,
-                routes=get_all_routes(self.request),
-                resources=self.resources,
-                **self.attrs,
-                **kwargs,
-            )
-        })
+        return dict(
+            config=self.config,
+            request=self.request,
+            form=self.form,
+            record=self.record,
+            routes=get_all_routes(self.request),
+            resources=self.resources,
+            **self.attrs,
+            **kwargs,
+        )
 
     def save(self):
         if not self.form.save.data:

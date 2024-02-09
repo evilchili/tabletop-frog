@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 data = {
     'CharacterClass': [
         {
+            'id': 1,
             'name': 'fighter',
             'hit_dice': '1d10',
             'hit_dice_stat': 'CON',
@@ -17,6 +18,7 @@ data = {
             'skills': ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Perception', 'Survival'],
         },
         {
+            'id': 2,
             'name': 'rogue',
             'hit_dice': '1d8',
             'hit_dice_stat': 'DEX',
@@ -25,6 +27,7 @@ data = {
             'skills': ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'],
         },
     ],
+
     'Skill': [
         {'name': 'Acrobatics'},
         {'name': 'Animal Handling'},
@@ -41,25 +44,24 @@ data = {
         {'name': 'Stealth'},
         {'name': 'Survival'},
     ],
+
     'Ancestry':  [
-        {'name': 'human', 'creature_type': 'humanoid'},
-        {'name': 'dragonborn', 'creature_type': 'humanoid'},
-        {'name': 'tiefling', 'creature_type': 'humanoid'},
+        {'id': 1, 'name': 'human', 'creature_type': 'humanoid'},
+        {'id': 2, 'name': 'dragonborn', 'creature_type': 'humanoid'},
+        {'id': 3, 'name': 'tiefling', 'creature_type': 'humanoid'},
     ],
+
     'Character': [
         {
             'id': 1,
             'name': 'Sabetha',
-            'ancestry': 'tiefling',
+            'ancestry': 'human',
             'character_class': ['fighter', 'rogue'],
             'level': 1,
             'armor_class': 10,
             'max_hit_points': 14,
             'hit_points': 14,
             'temp_hit_points': 0,
-            'passive_perception': 10,
-            'passive_insight': 10,
-            'passive_investigation': 10,
             'speed': '30 ft.',
             'str': 16,
             'dex': 12,
@@ -71,7 +73,36 @@ data = {
             'saving_throws': ['STR', 'CON'],
             'skills': ['Acrobatics', 'Animal Handling'],
         },
-    ]
+    ],
+
+    'ClassAttribute': [
+        {
+            'character_class_id': 1,
+            'name': 'Fighting Style',
+            'value': 'Archery',
+            'level': 1,
+        },
+    ],
+
+    'AncestryTrait': [
+        {
+            'id': 1,
+            'ancestry_id': 1,
+            'description': '+1 to All Ability Scores',
+            'level': 1,
+        },
+    ],
+
+    'Modifier': [
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'str'},
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'dex'},
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'con'},
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'int'},
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'wis'},
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'cha'},
+        {'source_table_name': 'class_attribute', 'source_table_id': 1, 'value': '+2', 'type': 'weapon ', 'target': 'ranged'},
+    ],
+
 }
 
 

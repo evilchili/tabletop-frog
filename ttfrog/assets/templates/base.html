@@ -18,6 +18,7 @@
     {% block content %}{% endblock %}
     </div>
     {% block debug %}{% endblock %}
+    {% block script %}{% endblock %}
 {% for resource in c.resources %}
     {% if resource['type'] == 'script' %}
     <script type="text/javascript" src="{{c.routes.static}}/{{resource['uri']}}"></script>

@@ -11,7 +11,7 @@
 <div class='banner'>
     <div><img id='portrait' /></div>
     <div>
-        <h1>{{ c.record.name }}</h1>
+        <h1>{{ c.form.name }}</h1>
         {{ c.form.ancestry }} {{ c.record.character_class|join(' / ') }} &nbsp; Level {{ c.form.level }}
     </div>
 </div>
@@ -72,4 +72,26 @@
 <code>
 {{ c }}
 </code>
+{% endblock %}
+
+
+{% block script %}
+<script type='text/javascript'>
+{% for field, msg in c.form.errors.items() %}
+    console.log("{{ field }}: {{ msg }}");
+{% endfor %}
+const TRAITS = {
+{% for trait_desc, traits in c.traits.items() %}
+    '{{ trait_desc }}': [
+        {% for trait in traits %}
+        {
+            "type": "{{ trait['type'] }}",
+            "target": "{{ trait.target }}",
+            "value": "{{ trait.value }}",
+        },
+        {% endfor %}
+    ],
+{% endfor %}
+};
+</script>
 {% endblock %}
