@@ -102,12 +102,12 @@ class BaseController:
         previous = dict(self.record)
         self.form.populate_obj(self.record)
         transaction_log.record(previous, self.record)
-        if self.record.id:
-            return
         with db.transaction():
             db.add(self.record)
             logging.debug(f"Added {self.record = }")
-            location = f"{self.request.current_route_path()}/{self.record.uri}"
+            location = self.request.current_route_path()
+            if self.slug not in location:
+                location = f"{location}/{self.record.uri}"
             return HTTPFound(location=location)
 
     def delete(self):

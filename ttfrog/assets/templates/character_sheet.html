@@ -11,7 +11,7 @@
 <div class='banner'>
     <div><img id='portrait' /></div>
     <div>
-        <h1>{{ c.form.name }}</h1>
+        {{ c.form.name }}
         {{ c.form.ancestry }} {{ c.record.character_class|join(' / ') }} &nbsp; Level {{ c.form.level }}
     </div>
 </div>
