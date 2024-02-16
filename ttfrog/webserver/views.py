@@ -17,3 +17,7 @@ def index(request):
 @view_config(route_name='sheet', renderer='character_sheet.html')
 def sheet(request):
     return response_from(request.context)
+
+@view_config(route_name='data', renderer='json')
+def data(request):
+    return response_from(request.context)

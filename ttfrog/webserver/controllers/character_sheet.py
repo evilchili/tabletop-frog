@@ -17,7 +17,7 @@ class CharacterForm(ModelForm):
     save = SubmitField()
     delete = SubmitField()
 
-    ancestry = DeferredSelectField('Ancestry', model=Ancestry, validate_choice=True, widget=Select())
+    ancestry = DeferredSelectField('Ancestry', model=Ancestry, default='human', validate_choice=True, widget=Select())
 
     character_class = DeferredSelectMultipleField(
         'CharacterClass',

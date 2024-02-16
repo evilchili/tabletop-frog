@@ -1,7 +1,7 @@
+import logging
 import nanoid
 from nanoid_dictionary import human_alphabet
 from sqlalchemy import Column
-from sqlalchemy import String
 from sqlalchemy import String
 from pyramid_sqlalchemy import BaseObject
 from slugify import slugify
@@ -31,9 +31,23 @@ class IterableMixin:
         for attr in self.__mapper__.columns.keys():
             if attr in values:
                 yield attr, values[attr]
+        for relname in self.__mapper__.relationships.keys():
+            relvals = []
+            for rel in self.__getattribute__(relname):
+                try:
+                    relvals.append({k: v for k, v in vars(rel).items() if not k.startswith('_')})
+                except TypeError:
+                    relvals.append(rel)
+            yield relname, relvals
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}: {str(dict(self))}"
+    def __json__(self, request):
+        serialized = dict()
+        for (key, value) in self:
+            try:
+                serialized[key] = getattr(self.value, '__json__')(request)
+            except AttributeError:
+                serialized[key] = value
+        return serialized
 
 
 def multivalue_string_factory(name, column=Column(String), separator=';'):

@@ -1,66 +1,153 @@
 {% extends "base.html" %}
-{% from "list.html" import build_list %}
+{% set DISABLED = False if c.record.id else True %}
+
+{% macro field(name, disabled=False) %}
+{% set default_value = c.record[name] if c.record.id else c.form[name].default %}
+{{ c.form[name](disabled=disabled, **{'data-initial_value': default_value}) }}
+{% endmacro %}
 
 {% block content %}
 
-{{ build_list(c) }}
-
-<div id='character_sheet'>
+<div id='sheet_container'>
 <form name="character_sheet" method="post" novalidate class="form">
 
 <div class='banner'>
     <div><img id='portrait' /></div>
     <div>
-        {{ c.form.name }}
-        {{ c.form.ancestry }} {{ c.record.character_class|join(' / ') }} &nbsp; Level {{ c.form.level }}
+        {{ field('name') }}
+        {{ field('ancestry') }} {{ c.record.character_class|join(' / ') }} &nbsp; Level {{ field('level') }}
+        <div id='controls'>
+        {{ c.form.save }} &nbsp; {{ c.form.delete }}
+        </div>
     </div>
 </div>
-<div class='statblock'>
+</div>
+<div id='character_sheet' {% if not c.record.id %}class='disabled'{% endif %} >
     <div class='stats'>
-        <div class='cards'>
 {% for stat in ['str', 'dex', 'con', 'int', 'wis', 'cha'] %}
-            <div class='card'>
-                <div class='label'>{{ c.form[stat].label }}</div>
-                {{ c.form[stat] }}
-                <div id='{{stat}}_bonus'></div>
-            </div>
+        <div class='card'>
+            <div class='label'>{{ c.form[stat].label }}</div>
+            {{ field(stat, DISABLED) }}
+            <div id='{{stat}}_bonus'></div>
+        </div>
 {% endfor %}
-            <div class='card'>
-                <div class='label'>AC</div>
-                {{ c.form.armor_class }}
+        <div id='hp' class='card'>
+            <div class='label'>HP</div>
+            {{ field('hit_points', DISABLED) }} / {{ field('max_hit_points', DISABLED) }}
+            <div id='temp_hp'>
+            <span class='label'>TEMP</span> {{ field('temp_hit_points', DISABLED) }}
             </div>
         </div>
-        <ul>
-        <li>Initiative: <span id='initiative'>3</span></li>
-        <li>Proficiency Bonus: <span id='proficiency_bonus'></span></li>
-        <li>Spell Save DC: <span id='spell_save_dc'></span></li>
-        <li>Saving Throws: <span id='saving_throws'>{{ c.record.saving_throws |join(', ') }}</span></li>
-        <li>Skills: <span id='skills'>{{ c.record.skills |join(', ') }}</span></li>
-        {% for field in c.form %}
-            {% if field.name in ['proficiencies', 'speed', 'passive_perception', 'passive_insight', 'passive_investigation'] %}
-            <li>{{ field.label }}: {{ field }} {{ field.errors|join(',') }}</li>
-            {% endif %}
-        {% endfor %}
-        </ul>
+        <div id='skills'>
+            <div class='label'>Skills</div>
+            <table>
+                {% for skill in c.record.skills %}
+                <tr><td>{{ skill }}</td><td>3</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div id='saves' class='card'>
+            <div class='label'>Saving Throws</div>
+            {% for save in c.record.saving_throws %}
+                {{ save }} 3&nbsp;
+            {% endfor %}
+        </div>
+
+        <div id='proficiency' class='card'>
+            <div class='label'>PROF</div>
+            <div id='proficiency_bonus'></div>
+            <div class='label'>BONUS</div>
+        </div>
+        <div id="ac" class='card'>
+            <div class='label'>Armor</div>
+            {{ field('armor_class', DISABLED) }}
+            <div class='label'>Class</div>
+        </div>
+        <div id='initiative' class='card'>
+            <div class='label'>Initiative</div>
+            <span id='initiative_bonus'>3 </span>
+            <div class='label'>Bonus</div>
+        </div>
+        <div id='speed' class='card'>
+            <div class='label'>Speed</div>
+            {{ field('speed', DISABLED) }}
+        </div>
+        <div id="actions" class='card'>
+            <table>
+                <tr>
+                    <td class='label' colspan='2'>Actions</td>
+                    <td class='label'>To Hit</td>
+                    <td class='label'>Range</td>
+                    <td class='label'>Targets</td>
+                    <td class='label'>Damage</td>
+                </tr>
+                <tr>
+                    <th>Attack</th>
+                    <td>Dagger</td>
+                    <td>+7</td>
+                    <td>5</td>
+                    <td>1</td>
+                    <td>1d4+3 slashing</td>
+                </tr>
+                <tr>
+                    <th>Attack</th>
+                    <td>Sabetha's Fans</td>
+                    <td>+7</td>
+                    <td>5</td>
+                    <td>1</td>
+                    <td>2d6 slashing</td>
+                </tr>
+                <tr>
+                    <th>Spell</th>
+                    <td>Eldritch Blast</td>
+                    <td>+5</td>
+                    <td>120</td>
+                    <td>1</td>
+                    <td>1d10 force</td>
+                </tr>
+                <tr>
+                    <td class='label' colspan='2'>Bonus Actions</td>
+                    <td class='label'>To Hit</td>
+                    <td class='label'>Range</td>
+                    <td class='label'>Targets</td>
+                    <td class='label'>Damage</td>
+                </tr>
+            </table>
+            <p>
+            <span class='note'>
+                Attack (1 per Action), Cast a Spell, Dash, Disengage, Dodge, Grapple,<br>Help, Hide, Improvise, Ready, Search, Shove, or Use an Object
+            </span>
+            </p>
+        </div>
     </div>
+
+
+    <!-- SIDEBAR -->
+
     <div class='sidebar'>
-        <div class='cards'>
-            <div class='card'>
-                <div class='label'>HP</div>
-                {{ c.form.max_hit_points }} / {{ c.form.hit_points }}
-            </div>
-            <div class='card'>
-                <div class='label'>TEMP HP</div>
-                {{ c.form.temp_hit_points }}
-            </div>
+        <div class='card'>
+            <div class='label'>Inspiration</div>
+            <ul>
+            </ul>
+        </div>
+        <div class='card'>
+            <div class='label'>Conditions</div>
+            <ul>
+            </ul>
+        </div>
+        <div class='card'>
+            <div class='label'>Defenses</div>
+            <ul>
+                <li>Vulnerable to Fire</li>
+                <li>Immune to Cold</li>
+                <li>Resistant to Poison</li>
+            </ul>
         </div>
     </div>
 </div>
 
 <hr>
 
-    {{ c.form.save }} &nbsp; {{ c.form.delete }}
-</div>
 {{ c.form.csrf_token }}
 </form>
 
@@ -69,6 +156,8 @@
 {% block debug %}
 <div style='clear:both;display:block;'>
 <h2>Debug</h2>
+<code>
+{{ DISABLED }}
 <code>
 {{ c }}
 </code>

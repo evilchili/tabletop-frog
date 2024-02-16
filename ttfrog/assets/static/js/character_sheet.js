@@ -58,6 +58,6 @@ function setSpellSaveDC() {
     stats.forEach(applyStatModifiers);
     stats.forEach(setStatBonus);
     setProficiencyBonus();
-    setSpellSaveDC();
+    // setSpellSaveDC();
     
 })();

@@ -62,7 +62,7 @@ data = {
             'max_hit_points': 14,
             'hit_points': 14,
             'temp_hit_points': 0,
-            'speed': '30 ft.',
+            'speed': 30,
             'str': 16,
             'dex': 12,
             'con': 18,
@@ -88,18 +88,32 @@ data = {
         {
             'id': 1,
             'ancestry_id': 1,
-            'description': '+1 to All Ability Scores',
+            'name': '+1 to All Ability Scores',
+            'level': 1,
+        },
+        {
+            'id': 2,
+            'ancestry_id': 2,
+            'name': 'Breath Weapon',
             'level': 1,
         },
     ],
 
     'Modifier': [
+        # Humans
         {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'str'},
         {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'dex'},
         {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'con'},
         {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'int'},
         {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'wis'},
         {'source_table_name': 'ancestry_trait', 'source_table_id': 1, 'value': '+1', 'type': 'stat', 'target': 'cha'},
+
+        # Dragonborn
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 2, 'value': '60', 'type': 'attribute ', 'target': 'Darkvision'},
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 2, 'value': '+1', 'type': 'stat', 'target': ''},
+        {'source_table_name': 'ancestry_trait', 'source_table_id': 2, 'value': '+1', 'type': 'stat', 'target': ''},
+
+        # Fighting Style: Archery
         {'source_table_name': 'class_attribute', 'source_table_id': 1, 'value': '+2', 'type': 'weapon ', 'target': 'ranged'},
     ],
 

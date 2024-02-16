@@ -63,6 +63,8 @@ class BaseController:
     def form(self):
         if not self.model:
             return
+        if not self.model_form:
+            return
         if not self._form:
             if self.request.POST:
                 self._form = self.model_form(self.request.POST, obj=self.record)
@@ -106,8 +108,9 @@ class BaseController:
             db.add(self.record)
             logging.debug(f"Added {self.record = }")
             location = self.request.current_route_path()
-            if self.slug not in location:
+            if self.record.slug not in location:
                 location = f"{location}/{self.record.uri}"
+            logging.debug(f"Redirecting to {location}")
             return HTTPFound(location=location)
 
     def delete(self):
