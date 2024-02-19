@@ -1,3 +1,4 @@
+import enum
 import logging
 import nanoid
 from nanoid_dictionary import human_alphabet
@@ -33,7 +34,11 @@ class IterableMixin:
                 yield attr, values[attr]
         for relname in self.__mapper__.relationships.keys():
             relvals = []
-            for rel in self.__getattribute__(relname):
+            reliter = self.__getattribute__(relname)
+            if not reliter:
+                yield relname, relvals
+                continue
+            for rel in reliter:
                 try:
                     relvals.append({k: v for k, v in vars(rel).items() if not k.startswith('_')})
                 except TypeError:
@@ -48,6 +53,9 @@ class IterableMixin:
             except AttributeError:
                 serialized[key] = value
         return serialized
+
+    def __repr__(self):
+        return str(dict(self))
 
 
 def multivalue_string_factory(name, column=Column(String), separator=';'):
@@ -75,6 +83,23 @@ def multivalue_string_factory(name, column=Column(String), separator=';'):
         name: setter,
     })
 
+
+class EnumField(enum.Enum):
+    """
+    A serializable enum.
+    """
+    def __json__(self, request):
+        return self.value
+
+
+SavingThrowsMixin = multivalue_string_factory('saving_throws')
+SkillsMixin = multivalue_string_factory('skills')
+
+STATS = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
+CREATURE_TYPES = ['aberation', 'beast', 'celestial', 'construct', 'dragon', 'elemental', 'fey', 'fiend', 'Giant',
+                  'humanoid', 'monstrosity', 'ooze', 'plant', 'undead']
+CreatureTypesEnum = EnumField("CreatureTypesEnum", ((k, k) for k in CREATURE_TYPES))
+StatsEnum = EnumField("StatsEnum", ((k, k) for k in STATS))
 
 # class Table(*Bases):
 Bases = [BaseObject, IterableMixin, SlugMixin]

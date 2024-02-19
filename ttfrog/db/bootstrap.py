@@ -49,15 +49,40 @@ data = {
         {'id': 1, 'name': 'human', 'creature_type': 'humanoid'},
         {'id': 2, 'name': 'dragonborn', 'creature_type': 'humanoid'},
         {'id': 3, 'name': 'tiefling', 'creature_type': 'humanoid'},
+        {'id': 4, 'name': 'elf', 'creature_type': 'humanoid'},
+    ],
+
+    'AncestryTrait': [
+        { 'id': 1, 'name': '+1 to All Ability Scores', },
+        { 'id': 2, 'name': 'Breath Weapon', },
+        { 'id': 3, 'name': 'Darkvision', },
+    ],
+
+    'AncestryTraitMap': [
+        { 'ancestry_id': 1, 'ancestry_trait_id': 1, 'level': 1},  # human +1 to scores
+        { 'ancestry_id': 2, 'ancestry_trait_id': 2, 'level': 1},  # dragonborn breath weapon
+        { 'ancestry_id': 3, 'ancestry_trait_id': 3, 'level': 1},  # tiefling darkvision
+        { 'ancestry_id': 2, 'ancestry_trait_id': 2, 'level': 1},  # elf darkvision
+    ],
+
+    'CharacterClassMap': [
+        {
+            'character_id': 1,
+            'character_class_id': 1,
+            'level': 2,
+        },
+        {
+            'character_id': 1,
+            'character_class_id': 2,
+            'level': 3,
+        },
     ],
 
     'Character': [
         {
             'id': 1,
             'name': 'Sabetha',
-            'ancestry': 'human',
-            'character_class': ['fighter', 'rogue'],
-            'level': 1,
+            'ancestry_id': 1,
             'armor_class': 10,
             'max_hit_points': 14,
             'hit_points': 14,
@@ -76,28 +101,17 @@ data = {
     ],
 
     'ClassAttribute': [
-        {
-            'character_class_id': 1,
-            'name': 'Fighting Style',
-            'value': 'Archery',
-            'level': 1,
-        },
+        {'id': 1, 'name': 'Fighting Style', 'value': 'Archery'},
     ],
 
-    'AncestryTrait': [
-        {
-            'id': 1,
-            'ancestry_id': 1,
-            'name': '+1 to All Ability Scores',
-            'level': 1,
-        },
-        {
-            'id': 2,
-            'ancestry_id': 2,
-            'name': 'Breath Weapon',
-            'level': 1,
-        },
+    'ClassAttributeMap': [
+        {'class_attribute_id': 1, 'character_class_id': 1, 'level': 2},  # Fighter: Archery fighting style
     ],
+
+    'CharacterClassAttributeMap': [
+        {'class_attribute_id': 1, 'character_id': 1},  # Sabetha: Archery fighting style
+    ],
+
 
     'Modifier': [
         # Humans

@@ -1,8 +1,7 @@
 from ttfrog.webserver.controllers.base import BaseController
 from ttfrog.webserver.forms import DeferredSelectField, DeferredSelectMultipleField
-from ttfrog.db.schema import Character, Ancestry, CharacterClass, AncestryTrait, Modifier, STATS
-from ttfrog.db.manager import db
-from ttfrog.attribute_map import AttributeMap
+from ttfrog.db.schema import Character, Ancestry, CharacterClass
+from ttfrog.db.base import STATS
 
 from wtforms_alchemy import ModelForm
 from wtforms.fields import SubmitField, SelectMultipleField
@@ -17,7 +16,7 @@ class CharacterForm(ModelForm):
     save = SubmitField()
     delete = SubmitField()
 
-    ancestry = DeferredSelectField('Ancestry', model=Ancestry, default='human', validate_choice=True, widget=Select())
+    ancestry = DeferredSelectField('Ancestry', model=Ancestry, default=1, validate_choice=True, widget=Select())
 
     character_class = DeferredSelectMultipleField(
         'CharacterClass',
@@ -38,14 +37,3 @@ class CharacterSheet(BaseController):
         return super().resources + [
             {'type': 'script', 'uri': 'js/character_sheet.js'},
         ]
-
-    def template_context(self, **kwargs) -> dict:
-        ctx = super().template_context(**kwargs)
-        if self.record.ancestry:
-            ancestry = db.query(Ancestry).filter_by(name=self.record.ancestry).one()
-            ctx['traits'] = {}
-            for trait in db.query(AncestryTrait).filter_by(ancestry_id=ancestry.id).all():
-                ctx['traits'][trait.description] = db.query(Modifier).filter_by(source_table_name=trait.__tablename__, source_table_id=trait.id).all()
-        else:
-            ctx['traits'] = {};
-        return ctx

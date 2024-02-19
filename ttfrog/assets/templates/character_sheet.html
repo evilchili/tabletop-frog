@@ -15,7 +15,12 @@
     <div><img id='portrait' /></div>
     <div>
         {{ field('name') }}
-        {{ field('ancestry') }} {{ c.record.character_class|join(' / ') }} &nbsp; Level {{ field('level') }}
+        {{ field('ancestry') }} 
+        {% for rec in c.record.classes %}
+            {{ rec.character_class.name }} {{ rec.level }}
+        {% endfor %}
+
+        {{ c.record.character_class|join(' / ') }} &nbsp;
         <div id='controls'>
         {{ c.form.save }} &nbsp; {{ c.form.delete }}
         </div>
@@ -136,6 +141,14 @@
             </ul>
         </div>
         <div class='card'>
+            <div class='label'>Attributes</div>
+            <ul>
+                {% for rec in c.record.attributes %}
+                    <li>{{ rec.attribute.name }}: {{ rec.attribute.value }}</li> 
+                {% endfor %}
+            </ul>
+        </div>
+        <div class='card'>
             <div class='label'>Defenses</div>
             <ul>
                 <li>Vulnerable to Fire</li>
@@ -159,7 +172,7 @@
 <code>
 {{ DISABLED }}
 <code>
-{{ c }}
+{{ c.record }}
 </code>
 {% endblock %}
 
@@ -170,7 +183,7 @@
     console.log("{{ field }}: {{ msg }}");
 {% endfor %}
 const TRAITS = {
-{% for trait_desc, traits in c.traits.items() %}
+{% for trait_desc, traits in [] %}
     '{{ trait_desc }}': [
         {% for trait in traits %}
         {
