@@ -71,6 +71,7 @@ class BaseController:
             else:
                 self._form = self.model_form(obj=self.record)
                 if not self.record.id:
+                    # apply the db schema defaults
                     self._form.process()
         return self._form
 
@@ -96,14 +97,19 @@ class BaseController:
             **kwargs,
         )
 
+    def populate(self):
+        self.form.populate_obj(self.record)
+
     def save(self):
         if not self.form.save.data:
             return
         if not self.form.validate():
             return
-        previous = dict(self.record)
-        self.form.populate_obj(self.record)
-        transaction_log.record(previous, self.record)
+        logging.debug(f"{self.form.data = }")
+        # previous = dict(self.record)
+        logging.debug(f"{self.record = }")
+        self.populate()
+        # transaction_log.record(previous, self.record)
         with db.transaction():
             db.add(self.record)
             logging.debug(f"Added {self.record = }")

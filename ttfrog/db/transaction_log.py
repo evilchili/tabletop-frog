@@ -6,6 +6,7 @@ from ttfrog.db.schema import TransactionLog
 
 
 def record(previous, new):
+    logging.debug(f"{previous = }, {new = }")
     diff = list((set(previous.items()) ^ set(dict(new).items())))
     if not diff:
         return

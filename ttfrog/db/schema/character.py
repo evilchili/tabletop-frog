@@ -1,3 +1,6 @@
+import logging
+
+
 from ttfrog.db.base import Bases, BaseObject, IterableMixin, SavingThrowsMixin, SkillsMixin
 from ttfrog.db.base import CreatureTypesEnum
 
@@ -7,7 +10,9 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import ForeignKey
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.associationproxy import association_proxy
 
 
 __all__ = [
@@ -18,6 +23,11 @@ __all__ = [
     'CharacterClassAttributeMap',
     'Character',
 ]
+
+def class_map_creator(fields):
+    if isinstance(fields, CharacterClassMap):
+        return fields
+    return CharacterClassMap(**fields)
 
 
 class AncestryTraitMap(BaseObject):
@@ -54,8 +64,11 @@ class AncestryTrait(BaseObject, IterableMixin):
 
 class CharacterClassMap(BaseObject):
     __tablename__ = "class_map"
-    character_id = Column(Integer, ForeignKey("character.id"), primary_key=True)
-    character_class_id = Column(Integer, ForeignKey("character_class.id"), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    character_id = Column(Integer, ForeignKey("character.id"))
+    character_class_id = Column(Integer, ForeignKey("character_class.id"))
+    mapping = UniqueConstraint(character_id, character_class_id)
+
     character_class = relationship("CharacterClass", lazy='immediate')
     level = Column(Integer, nullable=False, info={'min': 1, 'max': 20}, default=1)
 
@@ -84,7 +97,9 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
     cha = Column(Integer, nullable=False, default=10, info={'min': 0, 'max': 30})
     proficiencies = Column(String)
 
-    classes = relationship("CharacterClassMap")
+    class_map = relationship("CharacterClassMap", cascade='all,delete,delete-orphan')
+    classes = association_proxy('class_map', 'id', creator=class_map_creator)
+
     attributes = relationship("CharacterClassAttributeMap")
 
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"), nullable=False, default='1')

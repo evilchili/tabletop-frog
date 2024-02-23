@@ -15,12 +15,13 @@
     <div><img id='portrait' /></div>
     <div>
         {{ field('name') }}
-        {{ field('ancestry') }} 
-        {% for rec in c.record.classes %}
-            {{ rec.character_class.name }} {{ rec.level }}
+        {{ field('ancestry_id') }} 
+        {% for obj in c.form['classes'] %}
+            {{ obj(class='multiclass') }}
         {% endfor %}
+        {{ c.form['newclass'](class='multiclass') }}
 
-        {{ c.record.character_class|join(' / ') }} &nbsp;
+
         <div id='controls'>
         {{ c.form.save }} &nbsp; {{ c.form.delete }}
         </div>
