@@ -124,7 +124,6 @@ class BaseController:
             return
         with db.transaction():
             db.query(self.model).filter_by(id=self.record.id).delete()
-            logging.debug(f"Deleted {self.record = }")
             location = self.request.current_route_path()
             return HTTPFound(location=location)
 

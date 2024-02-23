@@ -19,7 +19,7 @@
         {% for obj in c.form['classes'] %}
             {{ obj(class='multiclass') }}
         {% endfor %}
-        {{ c.form['newclass'](class='multiclass') }}
+        <span class='label'>Add Class:</span> {{ c.form['newclass'](class='multiclass') }}
 
 
         <div id='controls'>
