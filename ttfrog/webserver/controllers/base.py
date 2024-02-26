@@ -100,10 +100,27 @@ class BaseController:
     def populate(self):
         self.form.populate_obj(self.record)
 
+    def populate_association(self, key, formdata):
+        populated = []
+        for field in formdata:
+            map_id = field.pop('id')
+            map_id = int(map_id) if map_id else 0
+            if not field[key]:
+                continue
+            elif not map_id:
+                populated.append(field)
+            else:
+                field['id'] = map_id
+                populated.append(field)
+        return populated
+
+    def validate(self):
+        return self.form.validate()
+
     def save(self):
         if not self.form.save.data:
             return
-        if not self.form.validate():
+        if not self.validate():
             return
         logging.debug(f"{self.form.data = }")
         # previous = dict(self.record)
@@ -112,7 +129,8 @@ class BaseController:
         # transaction_log.record(previous, self.record)
         with db.transaction():
             db.add(self.record)
-            logging.debug(f"Added {self.record = }")
+            self.save_callback()
+            logging.debug(f"Saved {self.record = }")
             location = self.request.current_route_path()
             if self.record.slug not in location:
                 location = f"{location}/{self.record.uri}"

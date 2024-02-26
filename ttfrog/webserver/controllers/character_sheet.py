@@ -3,7 +3,15 @@ import logging
 from ttfrog.webserver.controllers.base import BaseController
 from ttfrog.webserver.forms import DeferredSelectField
 from ttfrog.webserver.forms import NullableDeferredSelectField
-from ttfrog.db.schema import Character, Ancestry, CharacterClass, CharacterClassMap
+from ttfrog.db.schema import (
+    Character,
+    Ancestry,
+    CharacterClass,
+    CharacterClassMap,
+    ClassAttributeOption,
+    CharacterClassAttributeMap
+)
+
 from ttfrog.db.base import STATS
 from ttfrog.db.manager import db
 
@@ -11,14 +19,37 @@ from wtforms_alchemy import ModelForm
 from wtforms.fields import SubmitField, SelectField, SelectMultipleField, FieldList, FormField, HiddenField
 from wtforms.widgets import Select, ListWidget
 from wtforms import ValidationError
+from wtforms.validators import Optional
 
 VALID_LEVELS = range(1, 21)
 
 
+class ClassAttributesForm(ModelForm):
+    id = HiddenField()
+    class_attribute_id = HiddenField()
+
+    option_id = SelectField(
+        widget=Select(),
+        choices=[],
+        validators=[Optional()],
+        coerce=int
+    )
+
+    def __init__(self, formdata=None, obj=None, prefix=None):
+        if obj:
+            obj = db.query(CharacterClassAttributeMap).get(obj)
+        super().__init__(formdata=formdata, obj=obj, prefix=prefix)
+
+        if obj:
+            options = db.query(ClassAttributeOption).filter_by(attribute_id=obj.class_attribute.id)
+            self.option_id.label = obj.class_attribute.name
+            self.option_id.choices = [(rec.id, rec.name) for rec in options.all()]
+
+
 class MulticlassForm(ModelForm):
+
     id = HiddenField()
     character_class_id = NullableDeferredSelectField(
-        'CharacterClass',
         model=CharacterClass,
         validate_choice=True,
         widget=Select(),
@@ -32,7 +63,8 @@ class MulticlassForm(ModelForm):
         to an instance. This will ensure that the rendered field is populated with the current
         value of the class_map.
         """
-        obj = db.query(CharacterClassMap).get(obj)
+        if obj:
+            obj = db.query(CharacterClassMap).get(obj)
         super().__init__(formdata=formdata, obj=obj, prefix=prefix)
 
 
@@ -46,6 +78,9 @@ class CharacterForm(ModelForm):
     ancestry_id = DeferredSelectField('Ancestry', model=Ancestry, default=1, validate_choice=True, widget=Select())
     classes = FieldList(FormField(MulticlassForm, widget=ListWidget()), min_entries=0)
     newclass = FormField(MulticlassForm, widget=ListWidget())
+
+    class_attributes = FieldList(FormField(ClassAttributesForm, widget=ListWidget()), min_entries=1)
+
     saving_throws = SelectMultipleField('Saving Throws', validate_choice=True, choices=STATS)
 
 
@@ -59,62 +94,82 @@ class CharacterSheet(BaseController):
             {'type': 'script', 'uri': 'js/character_sheet.js'},
         ]
 
-    def populate_class_map(self, formdata):
-        """
-        Populate the record's class_map association_proxy with dictionaries of
-        CharacterClassMap field data. The creator factory on the proxy will
-        convert dictionary data to CharacterClassMap instances..
-        """
-        populated = []
-        for field in formdata:
-            class_map_id = field.pop('id')
-            class_map_id = int(class_map_id) if class_map_id else 0
-            logging.debug(f"{class_map_id = }, {field = }, {self.record.classes = }")
-            if not field['character_class_id']:
-                continue
-            elif not class_map_id:
-                populated.append(field)
-            else:
-                field['id'] = class_map_id
-                populated.append(field)
-        self.record.classes = populated
-
-    def validate_multiclass_form(self):
+    def validate_callback(self):
         """
         Validate multiclass fields in form data.
         """
+        ret = super().validate()
+        if not self.form.data['classes']:
+            return ret
+
         err = ""
         total_level = 0
         for field in self.form.data['classes']:
-            level = field.get('level', 0)
+            level = field.get('level')
             total_level += level
             if level not in VALID_LEVELS:
                 err = f"Multiclass form field {field = } level is outside possible range."
-                break
-            if self.record.id and field.get('character_id', None) != self.record.id:
-                err = f"Multiclass form field {field = } does not match character ID {self.record.id}"
                 break
         if total_level not in VALID_LEVELS:
             err = f"Total level for all multiclasses ({total_level}) is outside possible range."
         if err:
             logging.error(err)
             raise ValidationError(err)
+        return ret and True
 
-    def validate(self):
-        """
-        Add custom validation of the multiclass form data to standard form validation.
-        """
-        super().validate()
-        self.validate_multiclass_form()
+    def add_class_attributes(self):
+        # prefetch the records for each of the character's classes
+        classes_by_id = {
+            c.id: c for c in db.query(CharacterClass).filter(CharacterClass.id.in_(
+                c.character_class_id for c in self.record.class_map
+            )).all()
+        }
+
+        assigned = [int(m.class_attribute_id) for m in self.record.character_class_attribute_map]
+        logging.debug(f"{assigned = }")
+
+        # step through the list of class mappings for this character
+        for class_map in self.record.class_map:
+            thisclass = classes_by_id[class_map.character_class_id]
+
+            # assign each class attribute available at the character's current
+            # level to the list of the character's class attributes
+            for attr_map in [a for a in thisclass.attributes if a.level <= class_map.level]:
+
+                # when creating a record, assign the first of the available
+                # options to the character's class attribute.
+                default_option = db.query(ClassAttributeOption).filter_by(
+                    attribute_id=attr_map.class_attribute_id
+                ).first()
+
+                if attr_map.class_attribute_id not in assigned:
+                    self.record.character_class_attribute_map.append(
+                        CharacterClassAttributeMap(
+                            class_attribute_id=attr_map.class_attribute_id,
+                            option=default_option
+                        )
+                    )
+
+    def save_callback(self):
+        self.add_class_attributes()
 
     def populate(self):
         """
-        Delete the multiclass form data before calling form.populate_obj() and use
-        our own method for populating the fieldlist.
+        Delete the association proxies' form data before calling form.populate_obj(),
+        and instead use our own methods for populating the fieldlist.
         """
-        formdata = self.form.data['classes']
-        formdata.append(self.form.data['newclass'])
+
+        # multiclass form
+        classes_formdata = self.form.data['classes']
+        classes_formdata.append(self.form.data['newclass'])
         del self.form.classes
         del self.form.newclass
+
+        # class attributes
+        attrs_formdata = self.form.data['class_attributes']
+        del self.form.class_attributes
+
         super().populate()
-        self.populate_class_map(formdata)
+
+        self.record.classes = self.populate_association('character_class_id', classes_formdata)
+        self.record.class_attributes = self.populate_association('class_attribute_id', attrs_formdata)

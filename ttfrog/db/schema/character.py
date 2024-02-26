@@ -1,6 +1,3 @@
-import logging
-
-
 from ttfrog.db.base import Bases, BaseObject, IterableMixin, SavingThrowsMixin, SkillsMixin
 from ttfrog.db.base import CreatureTypesEnum
 
@@ -24,10 +21,16 @@ __all__ = [
     'Character',
 ]
 
+
 def class_map_creator(fields):
     if isinstance(fields, CharacterClassMap):
         return fields
     return CharacterClassMap(**fields)
+
+def attr_map_creator(fields):
+    if isinstance(fields, CharacterClassAttributeMap):
+        return fields
+    return CharacterClassAttributeMap(**fields)
 
 
 class AncestryTraitMap(BaseObject):
@@ -62,7 +65,7 @@ class AncestryTrait(BaseObject, IterableMixin):
     description = Column(Text)
 
 
-class CharacterClassMap(BaseObject):
+class CharacterClassMap(BaseObject, IterableMixin):
     __tablename__ = "class_map"
     id = Column(Integer, primary_key=True, autoincrement=True)
     character_id = Column(Integer, ForeignKey("character.id"))
@@ -73,11 +76,16 @@ class CharacterClassMap(BaseObject):
     level = Column(Integer, nullable=False, info={'min': 1, 'max': 20}, default=1)
 
 
-class CharacterClassAttributeMap(BaseObject):
+class CharacterClassAttributeMap(BaseObject, IterableMixin):
     __tablename__ = "character_class_attribute_map"
-    class_attribute_id = Column(Integer, ForeignKey("class_attribute.id"), primary_key=True)
-    character_id = Column(Integer, ForeignKey("character.id"), primary_key=True)
-    attribute = relationship("ClassAttribute", lazy='immediate')
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    character_id = Column(Integer, ForeignKey("character.id"), nullable=False)
+    class_attribute_id = Column(Integer, ForeignKey("class_attribute.id"), nullable=False)
+    option_id = Column(Integer, ForeignKey("class_attribute_option.id"), nullable=False)
+    mapping = UniqueConstraint(character_id, class_attribute_id)
+
+    class_attribute = relationship("ClassAttribute", lazy='immediate')
+    option = relationship("ClassAttributeOption", lazy='immediate')
 
 
 class Character(*Bases, SavingThrowsMixin, SkillsMixin):
@@ -100,7 +108,8 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
     class_map = relationship("CharacterClassMap", cascade='all,delete,delete-orphan')
     classes = association_proxy('class_map', 'id', creator=class_map_creator)
 
-    attributes = relationship("CharacterClassAttributeMap")
+    character_class_attribute_map = relationship("CharacterClassAttributeMap", cascade='all,delete,delete-orphan')
+    class_attributes = association_proxy('character_class_attribute_map', 'id', creator=attr_map_creator)
 
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"), nullable=False, default='1')
     ancestry = relationship("Ancestry", uselist=False)

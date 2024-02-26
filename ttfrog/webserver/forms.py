@@ -11,7 +11,7 @@ class DeferredSelectMultipleField(SelectMultipleField):
 class DeferredSelectField(SelectField):
     def __init__(self, *args, model=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.choices = [(rec.id, rec.name) for rec in db.query(model).all()]
+        self.choices = [(rec.id, getattr(rec, 'name', str(rec))) for rec in db.query(model).all()]
 
 
 class NullableDeferredSelectField(DeferredSelectField):

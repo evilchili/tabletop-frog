@@ -53,16 +53,16 @@ data = {
     ],
 
     'AncestryTrait': [
-        { 'id': 1, 'name': '+1 to All Ability Scores', },
-        { 'id': 2, 'name': 'Breath Weapon', },
-        { 'id': 3, 'name': 'Darkvision', },
+        {'id': 1, 'name': '+1 to All Ability Scores', },
+        {'id': 2, 'name': 'Breath Weapon', },
+        {'id': 3, 'name': 'Darkvision', },
     ],
 
     'AncestryTraitMap': [
-        { 'ancestry_id': 1, 'ancestry_trait_id': 1, 'level': 1},  # human +1 to scores
-        { 'ancestry_id': 2, 'ancestry_trait_id': 2, 'level': 1},  # dragonborn breath weapon
-        { 'ancestry_id': 3, 'ancestry_trait_id': 3, 'level': 1},  # tiefling darkvision
-        { 'ancestry_id': 2, 'ancestry_trait_id': 2, 'level': 1},  # elf darkvision
+        {'ancestry_id': 1, 'ancestry_trait_id': 1, 'level': 1},  # human +1 to scores
+        {'ancestry_id': 2, 'ancestry_trait_id': 2, 'level': 1},  # dragonborn breath weapon
+        {'ancestry_id': 3, 'ancestry_trait_id': 3, 'level': 1},  # tiefling darkvision
+        {'ancestry_id': 2, 'ancestry_trait_id': 2, 'level': 1},  # elf darkvision
     ],
 
     'CharacterClassMap': [
@@ -101,15 +101,26 @@ data = {
     ],
 
     'ClassAttribute': [
-        {'id': 1, 'name': 'Fighting Style', 'value': 'Archery'},
+        {'id': 1, 'name': 'Fighting Style'},
+        {'id': 2, 'name': 'Another Attribute'},
     ],
 
+    'ClassAttributeOption': [
+        {'id': 1, 'attribute_id': 1, 'name': 'Archery'},
+        {'id': 2, 'attribute_id': 1, 'name': 'Battlemaster'},
+        {'id': 3, 'attribute_id': 2, 'name': 'Another Option 1'},
+        {'id': 4, 'attribute_id': 2, 'name': 'Another Option 2'},
+    ],
+
+
     'ClassAttributeMap': [
-        {'class_attribute_id': 1, 'character_class_id': 1, 'level': 2},  # Fighter: Archery fighting style
+        {'class_attribute_id': 1, 'character_class_id': 1, 'level': 2},  # Fighter: Fighting Style
+        {'class_attribute_id': 2, 'character_class_id': 1, 'level': 1},  # Fighter: Another Attr
     ],
 
     'CharacterClassAttributeMap': [
-        {'class_attribute_id': 1, 'character_id': 1},  # Sabetha: Archery fighting style
+        {'character_id': 1, 'class_attribute_id': 2, 'option_id': 4},  # Sabetha, another option, option 2
+        {'character_id': 1, 'class_attribute_id': 1, 'option_id': 1},  # Sabetha, fighting style, archery
     ],
 
 
