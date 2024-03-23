@@ -143,12 +143,10 @@ class CharacterSheet(BaseController):
                 ).first()
 
                 if attr_map.class_attribute_id not in assigned:
-                    self.record.character_class_attribute_map.append(
-                        CharacterClassAttributeMap(
-                            class_attribute_id=attr_map.class_attribute_id,
-                            option=default_option
-                        )
-                    )
+                    self.record.class_attributes.append({
+                        'class_attribute_id': attr_map.class_attribute_id,
+                        'option_id': default_option.id,
+                    })
 
     def save_callback(self):
         self.add_class_attributes()
