@@ -1,0 +1,19 @@
+{
+    "Ancestry": [
+        {"id": 1, "name": "human", "creature_type": "humanoid"},
+        {"id": 2, "name": "dragonborn", "creature_type": "humanoid"},
+        {"id": 3, "name": "tiefling", "creature_type": "humanoid"},
+        {"id": 4, "name": "elf", "creature_type": "humanoid"}
+    ],
+    "AncestryTrait": [
+        {"id": 1, "name": "+1 to All Ability Scores"},
+        {"id": 2, "name": "Breath Weapon"},
+        {"id": 3, "name": "Darkvision"}
+    ],
+    "AncestryTraitMap": [
+        {"ancestry_id": 1, "ancestry_trait_id": 1, "level": 1},
+        {"ancestry_id": 2, "ancestry_trait_id": 2, "level": 1},
+        {"ancestry_id": 2, "ancestry_trait_id": 2, "level": 1},
+        {"ancestry_id": 3, "ancestry_trait_id": 3, "level": 1}
+    ]
+}

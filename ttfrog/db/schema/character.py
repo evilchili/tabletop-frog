@@ -27,6 +27,7 @@ def class_map_creator(fields):
         return fields
     return CharacterClassMap(**fields)
 
+
 def attr_map_creator(fields):
     if isinstance(fields, CharacterClassAttributeMap):
         return fields
@@ -35,8 +36,9 @@ def attr_map_creator(fields):
 
 class AncestryTraitMap(BaseObject):
     __tablename__ = "trait_map"
-    ancestry_id = Column(Integer, ForeignKey("ancestry.id"), primary_key=True)
-    ancestry_trait_id = Column(Integer, ForeignKey("ancestry_trait.id"), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ancestry_id = Column(Integer, ForeignKey("ancestry.id"))
+    ancestry_trait_id = Column(Integer, ForeignKey("ancestry_trait.id"))
     trait = relationship("AncestryTrait", lazy='immediate')
     level = Column(Integer, nullable=False, info={'min': 1, 'max': 20})
 
@@ -64,6 +66,9 @@ class AncestryTrait(BaseObject, IterableMixin):
     name = Column(String, nullable=False)
     description = Column(Text)
 
+    def __repr__(self):
+        return self.name
+
 
 class CharacterClassMap(BaseObject, IterableMixin):
     __tablename__ = "class_map"
@@ -71,9 +76,13 @@ class CharacterClassMap(BaseObject, IterableMixin):
     character_id = Column(Integer, ForeignKey("character.id"))
     character_class_id = Column(Integer, ForeignKey("character_class.id"))
     mapping = UniqueConstraint(character_id, character_class_id)
+    level = Column(Integer, nullable=False, info={'min': 1, 'max': 20}, default=1)
 
     character_class = relationship("CharacterClass", lazy='immediate')
-    level = Column(Integer, nullable=False, info={'min': 1, 'max': 20}, default=1)
+    character = relationship("Character", uselist=False, viewonly=True)
+
+    def __repr__(self):
+        return f"{self.character.name}, {self.character_class.name}, level {self.level}"
 
 
 class CharacterClassAttributeMap(BaseObject, IterableMixin):
@@ -86,6 +95,14 @@ class CharacterClassAttributeMap(BaseObject, IterableMixin):
 
     class_attribute = relationship("ClassAttribute", lazy='immediate')
     option = relationship("ClassAttributeOption", lazy='immediate')
+
+    character_class = relationship(
+        "CharacterClass",
+        secondary="class_map",
+        primaryjoin="CharacterClassAttributeMap.character_id == CharacterClassMap.character_id",
+        secondaryjoin="CharacterClass.id == CharacterClassMap.character_class_id",
+        viewonly=True
+    )
 
 
 class Character(*Bases, SavingThrowsMixin, SkillsMixin):
@@ -113,3 +130,32 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
 
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"), nullable=False, default='1')
     ancestry = relationship("Ancestry", uselist=False)
+
+    @property
+    def traits(self):
+        return [mapping.trait for mapping in self.ancestry.traits]
+
+    @property
+    def level(self):
+        return sum(mapping.level for mapping in self.class_map)
+
+    @property
+    def levels(self):
+        return dict([(mapping.character_class.name, mapping.level) for mapping in self.class_map])
+
+    def add_class(self, newclass, level=1):
+        if level == 0:
+            return self.remove_class(newclass)
+        level_in_class = [mapping for mapping in self.class_map if mapping.character_class_id == newclass.id]
+        if level_in_class:
+            level_in_class = level_in_class[0]
+            level_in_class.level = level
+            return
+        self.classes.append(CharacterClassMap(
+            character_id=self.id,
+            character_class_id=newclass.id,
+            level=level
+        ))
+
+    def remove_class(self, target):
+        self.class_map = [m for m in self.class_map if m.id != target.id]

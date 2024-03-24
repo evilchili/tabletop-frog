@@ -1,0 +1,7 @@
+{
+    "name": "multiclass_pc",
+    "classes": [
+        "fighter": 5,
+        "rogue": 3
+    ]
+}

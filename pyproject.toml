@@ -27,6 +27,9 @@ wtforms-alchemy = "^0.18.0"
 sqlalchemy-serializer = "^1.4.1"
 
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

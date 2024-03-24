@@ -1,0 +1,20 @@
+{
+    "CharacterClass": [
+        {
+            "name": "fighter",
+            "hit_dice": "1d10",
+            "hit_dice_stat": "CON",
+            "proficiencies": "all armor, all shields, simple weapons, martial weapons",
+            "saving_throws": ["STR, CON"],
+            "skills": ["Acrobatics", "Animal Handling", "Athletics", "History", "Insight", "Intimidation", "Perception", "Survival"]
+        },
+        {
+            "name": "rogue",
+            "hit_dice": "1d8",
+            "hit_dice_stat": "DEX",
+            "proficiencies": "simple weapons, hand crossbows, longswords, rapiers, shortswords",
+            "saving_throws": ["DEX", "INT"],
+            "skills": ["Acrobatics", "Athletics", "Deception", "Insight", "Intimidation", "Investigation", "Perception", "Performance", "Persuasion", "Sleight of Hand", "Stealth"]
+        }
+    ]
+}

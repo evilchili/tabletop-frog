@@ -1,3 +1,4 @@
+import os
 import transaction
 import base64
 import hashlib
@@ -24,7 +25,7 @@ class SQLDatabaseManager:
     """
     @cached_property
     def url(self):
-        return f"sqlite:///{database()}"
+        return os.environ.get('DATABASE_URL', f"sqlite:///{database()}")
 
     @cached_property
     def engine(self):
@@ -69,6 +70,12 @@ class SQLDatabaseManager:
     def init(self):
         init_sqlalchemy(self.engine)
         self.metadata.create_all(self.engine)
+
+    def dump(self):
+        results = {}
+        for (table_name, table) in self.tables.items():
+            results[table_name] = [row for row in self.query(table).all()]
+        return results
 
     def __getattr__(self, name: str):
         try:
