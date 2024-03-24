@@ -20,7 +20,7 @@ body {
 
 #content {
     margin: 1rem auto;
-    max-width:1280px;
+    max-width: 1280px;
 }
 
 
@@ -53,11 +53,10 @@ ul.nav li {
 }
 
 #character_sheet {
-    width: 100%;
     margin-bottom:3rem;
     display: grid;
     grid-gap: 1rem;
-    grid-template-columns: min-content max-content;
+    grid-template-columns: 1fr 1fr;
 }
 
 #sheet_container .banner {
@@ -224,4 +223,30 @@ ul.multiclass {
 }
 .multiclass label {
     display: none;
+}
+
+
+ul#class_attributes {
+    list-style-type: none;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+ul#class_attributes li {
+    display: grid;
+    grid-template-columns: min-content 1fr 1fr;
+}
+
+ul#class_attributes span,
+ul#class_attributes label {
+    margin-right: 0.5rem;
+}
+
+ul#class_attributes label {
+    text-align: left;
+    font-weight: bold;
+}
+
+ul#class_attributes span select {
+    width: 100%;
 }

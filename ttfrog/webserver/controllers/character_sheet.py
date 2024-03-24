@@ -20,8 +20,36 @@ from wtforms.fields import SubmitField, SelectField, SelectMultipleField, FieldL
 from wtforms.widgets import Select, ListWidget
 from wtforms import ValidationError
 from wtforms.validators import Optional
+from wtforms.widgets.core import html_params
+
+from markupsafe import Markup
+
 
 VALID_LEVELS = range(1, 21)
+
+
+class ClassAttributeWidget:
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault("id", field.id)
+        html = [
+            f"<span {html_params(**kwargs)}>{field.character_class_map.class_attribute.name}</span>",
+            "<span>",
+        ]
+        for subfield in field:
+            html.append(subfield())
+        html.append("</span>")
+        return Markup("".join(html))
+
+
+class ClassAttributesFormField(FormField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.character_class_map = None
+
+    def process(self, *args, **kwargs):
+        super().process(*args, **kwargs)
+        self.character_class_map = db.query(CharacterClassAttributeMap).get(self.data['id'])
+        self.label.text = self.character_class_map.character_class[0].name
 
 
 class ClassAttributesForm(ModelForm):
@@ -42,7 +70,6 @@ class ClassAttributesForm(ModelForm):
 
         if obj:
             options = db.query(ClassAttributeOption).filter_by(attribute_id=obj.class_attribute.id)
-            self.option_id.label = obj.class_attribute.name
             self.option_id.choices = [(rec.id, rec.name) for rec in options.all()]
 
 
@@ -76,10 +103,13 @@ class CharacterForm(ModelForm):
     save = SubmitField()
     delete = SubmitField()
     ancestry_id = DeferredSelectField('Ancestry', model=Ancestry, default=1, validate_choice=True, widget=Select())
-    classes = FieldList(FormField(MulticlassForm, widget=ListWidget()), min_entries=0)
+    classes = FieldList(FormField(MulticlassForm, label=None, widget=ListWidget()), min_entries=0)
     newclass = FormField(MulticlassForm, widget=ListWidget())
 
-    class_attributes = FieldList(FormField(ClassAttributesForm, widget=ListWidget()), min_entries=1)
+    class_attributes = FieldList(
+        ClassAttributesFormField(ClassAttributesForm, widget=ClassAttributeWidget()),
+        min_entries=1
+    )
 
     saving_throws = SelectMultipleField('Saving Throws', validate_choice=True, choices=STATS)
 
