@@ -1,20 +1,19 @@
-import os
-import transaction
 import base64
 import hashlib
-
+import os
 from contextlib import contextmanager
 from functools import cached_property
 
-from pyramid_sqlalchemy import Session
-from pyramid_sqlalchemy import init_sqlalchemy
+import transaction
+from pyramid_sqlalchemy import Session, init_sqlalchemy
 from pyramid_sqlalchemy import metadata as _metadata
-
 from sqlalchemy import create_engine
+
+import ttfrog.db.schema
+from ttfrog.path import database
+
 # from sqlalchemy.exc import IntegrityError
 
-from ttfrog.path import database
-import ttfrog.db.schema
 
 ttfrog.db.schema
 
@@ -23,9 +22,10 @@ class SQLDatabaseManager:
     """
     A context manager for working with sqllite database.
     """
+
     @cached_property
     def url(self):
-        return os.environ.get('DATABASE_URL', f"sqlite:///{database()}")
+        return os.environ.get("DATABASE_URL", f"sqlite:///{database()}")
 
     @cached_property
     def engine(self):
@@ -64,7 +64,7 @@ class SQLDatabaseManager:
         """
         Create a uniquish slug from a dictionary.
         """
-        sha1bytes = hashlib.sha1(str(rec['id']).encode())
+        sha1bytes = hashlib.sha1(str(rec["id"]).encode())
         return base64.urlsafe_b64encode(sha1bytes.digest()).decode("ascii")[:10]
 
     def init(self):
@@ -73,7 +73,7 @@ class SQLDatabaseManager:
 
     def dump(self):
         results = {}
-        for (table_name, table) in self.tables.items():
+        for table_name, table in self.tables.items():
             results[table_name] = [row for row in self.query(table).all()]
         return results
 

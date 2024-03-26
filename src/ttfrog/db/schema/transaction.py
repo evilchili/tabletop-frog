@@ -1,10 +1,9 @@
-from ttfrog.db.base import BaseObject, IterableMixin
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Text
+from sqlalchemy import Column, Integer, String, Text
 
-__all__ = ['TransactionLog']
+from ttfrog.db.base import BaseObject, IterableMixin
+
+__all__ = ["TransactionLog"]
+
 
 class TransactionLog(BaseObject, IterableMixin):
     __tablename__ = "transaction_log"

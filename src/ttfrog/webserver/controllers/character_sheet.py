@@ -1,29 +1,25 @@
 import logging
 
-from ttfrog.webserver.controllers.base import BaseController
-from ttfrog.webserver.forms import DeferredSelectField
-from ttfrog.webserver.forms import NullableDeferredSelectField
-from ttfrog.db.schema import (
-    Character,
-    Ancestry,
-    CharacterClass,
-    CharacterClassMap,
-    ClassAttributeOption,
-    CharacterClassAttributeMap
-)
+from markupsafe import Markup
+from wtforms import ValidationError
+from wtforms.fields import FieldList, FormField, HiddenField, SelectField, SelectMultipleField, SubmitField
+from wtforms.validators import Optional
+from wtforms.widgets import ListWidget, Select
+from wtforms.widgets.core import html_params
+from wtforms_alchemy import ModelForm
 
 from ttfrog.db.base import STATS
 from ttfrog.db.manager import db
-
-from wtforms_alchemy import ModelForm
-from wtforms.fields import SubmitField, SelectField, SelectMultipleField, FieldList, FormField, HiddenField
-from wtforms.widgets import Select, ListWidget
-from wtforms import ValidationError
-from wtforms.validators import Optional
-from wtforms.widgets.core import html_params
-
-from markupsafe import Markup
-
+from ttfrog.db.schema import (
+    Ancestry,
+    Character,
+    CharacterClass,
+    CharacterClassAttributeMap,
+    CharacterClassMap,
+    ClassAttributeOption,
+)
+from ttfrog.webserver.controllers.base import BaseController
+from ttfrog.webserver.forms import DeferredSelectField, NullableDeferredSelectField
 
 VALID_LEVELS = range(1, 21)
 
@@ -48,7 +44,7 @@ class ClassAttributesFormField(FormField):
 
     def process(self, *args, **kwargs):
         super().process(*args, **kwargs)
-        self.character_class_map = db.query(CharacterClassAttributeMap).get(self.data['id'])
+        self.character_class_map = db.query(CharacterClassAttributeMap).get(self.data["id"])
         self.label.text = self.character_class_map.character_class[0].name
 
 
@@ -56,12 +52,7 @@ class ClassAttributesForm(ModelForm):
     id = HiddenField()
     class_attribute_id = HiddenField()
 
-    option_id = SelectField(
-        widget=Select(),
-        choices=[],
-        validators=[Optional()],
-        coerce=int
-    )
+    option_id = SelectField(widget=Select(), choices=[], validators=[Optional()], coerce=int)
 
     def __init__(self, formdata=None, obj=None, prefix=None):
         if obj:
@@ -74,13 +65,9 @@ class ClassAttributesForm(ModelForm):
 
 
 class MulticlassForm(ModelForm):
-
     id = HiddenField()
     character_class_id = NullableDeferredSelectField(
-        model=CharacterClass,
-        validate_choice=True,
-        widget=Select(),
-        coerce=int
+        model=CharacterClass, validate_choice=True, widget=Select(), coerce=int
     )
     level = SelectField(choices=VALID_LEVELS, default=1, coerce=int, validate_choice=True, widget=Select())
 
@@ -98,20 +85,19 @@ class MulticlassForm(ModelForm):
 class CharacterForm(ModelForm):
     class Meta:
         model = Character
-        exclude = ['slug']
+        exclude = ["slug"]
 
     save = SubmitField()
     delete = SubmitField()
-    ancestry_id = DeferredSelectField('Ancestry', model=Ancestry, default=1, validate_choice=True, widget=Select())
+    ancestry_id = DeferredSelectField("Ancestry", model=Ancestry, default=1, validate_choice=True, widget=Select())
     classes = FieldList(FormField(MulticlassForm, label=None, widget=ListWidget()), min_entries=0)
     newclass = FormField(MulticlassForm, widget=ListWidget())
 
     class_attributes = FieldList(
-        ClassAttributesFormField(ClassAttributesForm, widget=ClassAttributeWidget()),
-        min_entries=1
+        ClassAttributesFormField(ClassAttributesForm, widget=ClassAttributeWidget()), min_entries=1
     )
 
-    saving_throws = SelectMultipleField('Saving Throws', validate_choice=True, choices=STATS)
+    saving_throws = SelectMultipleField("Saving Throws", validate_choice=True, choices=STATS)
 
 
 class CharacterSheet(BaseController):
@@ -121,7 +107,7 @@ class CharacterSheet(BaseController):
     @property
     def resources(self):
         return super().resources + [
-            {'type': 'script', 'uri': 'js/character_sheet.js'},
+            {"type": "script", "uri": "js/character_sheet.js"},
         ]
 
     def validate_callback(self):
@@ -129,13 +115,13 @@ class CharacterSheet(BaseController):
         Validate multiclass fields in form data.
         """
         ret = super().validate()
-        if not self.form.data['classes']:
+        if not self.form.data["classes"]:
             return ret
 
         err = ""
         total_level = 0
-        for field in self.form.data['classes']:
-            level = field.get('level')
+        for field in self.form.data["classes"]:
+            level = field.get("level")
             total_level += level
             if level not in VALID_LEVELS:
                 err = f"Multiclass form field {field = } level is outside possible range."
@@ -150,9 +136,10 @@ class CharacterSheet(BaseController):
     def add_class_attributes(self):
         # prefetch the records for each of the character's classes
         classes_by_id = {
-            c.id: c for c in db.query(CharacterClass).filter(CharacterClass.id.in_(
-                c.character_class_id for c in self.record.class_map
-            )).all()
+            c.id: c
+            for c in db.query(CharacterClass)
+            .filter(CharacterClass.id.in_(c.character_class_id for c in self.record.class_map))
+            .all()
         }
 
         assigned = [int(m.class_attribute_id) for m in self.record.character_class_attribute_map]
@@ -165,18 +152,19 @@ class CharacterSheet(BaseController):
             # assign each class attribute available at the character's current
             # level to the list of the character's class attributes
             for attr_map in [a for a in thisclass.attributes if a.level <= class_map.level]:
-
                 # when creating a record, assign the first of the available
                 # options to the character's class attribute.
-                default_option = db.query(ClassAttributeOption).filter_by(
-                    attribute_id=attr_map.class_attribute_id
-                ).first()
+                default_option = (
+                    db.query(ClassAttributeOption).filter_by(attribute_id=attr_map.class_attribute_id).first()
+                )
 
                 if attr_map.class_attribute_id not in assigned:
-                    self.record.class_attributes.append({
-                        'class_attribute_id': attr_map.class_attribute_id,
-                        'option_id': default_option.id,
-                    })
+                    self.record.class_attributes.append(
+                        {
+                            "class_attribute_id": attr_map.class_attribute_id,
+                            "option_id": default_option.id,
+                        }
+                    )
 
     def save_callback(self):
         self.add_class_attributes()
@@ -188,16 +176,16 @@ class CharacterSheet(BaseController):
         """
 
         # multiclass form
-        classes_formdata = self.form.data['classes']
-        classes_formdata.append(self.form.data['newclass'])
+        classes_formdata = self.form.data["classes"]
+        classes_formdata.append(self.form.data["newclass"])
         del self.form.classes
         del self.form.newclass
 
         # class attributes
-        attrs_formdata = self.form.data['class_attributes']
+        attrs_formdata = self.form.data["class_attributes"]
         del self.form.class_attributes
 
         super().populate()
 
-        self.record.classes = self.populate_association('character_class_id', classes_formdata)
-        self.record.class_attributes = self.populate_association('class_attribute_id', attrs_formdata)
+        self.record.classes = self.populate_association("character_class_id", classes_formdata)
+        self.record.class_attributes = self.populate_association("class_attribute_id", attrs_formdata)

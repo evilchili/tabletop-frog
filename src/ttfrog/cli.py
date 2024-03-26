@@ -2,8 +2,8 @@ import io
 import logging
 import os
 from pathlib import Path
-from typing import Optional
 from textwrap import dedent
+from typing import Optional
 
 import typer
 from dotenv import load_dotenv
@@ -12,9 +12,8 @@ from rich.logging import RichHandler
 
 from ttfrog.path import assets
 
-
 default_data_path = Path("~/.dnd/ttfrog")
-default_host = '127.0.0.1'
+default_host = "127.0.0.1"
 default_port = 2323
 
 SETUP_HELP = f"""
@@ -47,18 +46,16 @@ def main(
     root: Optional[Path] = typer.Option(
         default_data_path,
         help="Path to the TableTop Frog environment",
-    )
+    ),
 ):
-    app_state['env'] = root.expanduser() / Path('defaults')
+    app_state["env"] = root.expanduser() / Path("defaults")
     load_dotenv(stream=io.StringIO(SETUP_HELP))
-    load_dotenv(app_state['env'])
-    debug = os.getenv('DEBUG', None)
+    load_dotenv(app_state["env"])
+    debug = os.getenv("DEBUG", None)
     logging.basicConfig(
-        format='%(message)s',
+        format="%(message)s",
         level=logging.DEBUG if debug else logging.INFO,
-        handlers=[
-            RichHandler(rich_tracebacks=True, tracebacks_suppress=[typer])
-        ]
+        handlers=[RichHandler(rich_tracebacks=True, tracebacks_suppress=[typer])],
     )
 
 
@@ -68,9 +65,10 @@ def setup(context: typer.Context):
     (Re)Initialize TableTop Frog. Idempotent; will preserve any existing configuration.
     """
     from ttfrog.db.bootstrap import bootstrap
-    if not os.path.exists(app_state['env']):
-        app_state['env'].parent.mkdir(parents=True, exist_ok=True)
-        app_state['env'].write_text(dedent(SETUP_HELP))
+
+    if not os.path.exists(app_state["env"]):
+        app_state["env"].parent.mkdir(parents=True, exist_ok=True)
+        app_state["env"].write_text(dedent(SETUP_HELP))
         print(f"Wrote defaults file {app_state['env']}.")
     bootstrap()
 
@@ -86,23 +84,20 @@ def serve(
         default_port,
         help="bind port",
     ),
-    debug: bool = typer.Option(
-        False,
-        help='Enable debugging output'
-    ),
+    debug: bool = typer.Option(False, help="Enable debugging output"),
 ):
     """
     Start the TableTop Frog server.
     """
 
     # delay loading the app until we have configured our environment
-    from ttfrog.webserver import application
     from ttfrog.db.bootstrap import bootstrap
+    from ttfrog.webserver import application
 
     print("Starting TableTop Frog server...")
     bootstrap()
     application.start(host=host, port=port, debug=debug)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app()

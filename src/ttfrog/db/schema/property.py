@@ -1,16 +1,11 @@
-from ttfrog.db.base import Bases, BaseObject, IterableMixin
+from sqlalchemy import Column, Integer, String, Text, UniqueConstraint
 
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Text
-from sqlalchemy import UniqueConstraint
-
+from ttfrog.db.base import BaseObject, Bases, IterableMixin
 
 __all__ = [
-    'Skill',
-    'Proficiency',
-    'Modifier',
+    "Skill",
+    "Proficiency",
+    "Modifier",
 ]
 
 
@@ -35,9 +30,7 @@ class Proficiency(*Bases):
 
 class Modifier(BaseObject, IterableMixin):
     __tablename__ = "modifier"
-    __table_args__ = (
-        UniqueConstraint('source_table_name', 'source_table_id', 'value', 'type', 'target'),
-    )
+    __table_args__ = (UniqueConstraint("source_table_name", "source_table_id", "value", "type", "target"),)
     id = Column(Integer, primary_key=True, autoincrement=True)
     source_table_name = Column(String, index=True, nullable=False)
     source_table_id = Column(Integer, index=True, nullable=False)

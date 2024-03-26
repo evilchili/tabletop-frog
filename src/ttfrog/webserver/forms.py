@@ -1,5 +1,6 @@
-from ttfrog.db.manager import db
 from wtforms.fields import SelectField, SelectMultipleField
+
+from ttfrog.db.manager import db
 
 
 class DeferredSelectMultipleField(SelectMultipleField):
@@ -11,10 +12,10 @@ class DeferredSelectMultipleField(SelectMultipleField):
 class DeferredSelectField(SelectField):
     def __init__(self, *args, model=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.choices = [(rec.id, getattr(rec, 'name', str(rec))) for rec in db.query(model).all()]
+        self.choices = [(rec.id, getattr(rec, "name", str(rec))) for rec in db.query(model).all()]
 
 
 class NullableDeferredSelectField(DeferredSelectField):
-    def __init__(self, *args, model=None, label='---',  **kwargs):
-        super().__init__(*args, model=model,  **kwargs)
+    def __init__(self, *args, model=None, label="---", **kwargs):
+        super().__init__(*args, model=model, **kwargs)
         self.choices = [(0, label)] + self.choices

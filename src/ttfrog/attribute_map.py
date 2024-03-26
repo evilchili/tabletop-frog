@@ -41,6 +41,7 @@ class AttributeMap(Mapping):
 
 
     """
+
     attributes: field(default_factory=dict)
 
     def __getattr__(self, attr):

@@ -1,27 +1,25 @@
 import logging
 import re
-
 from collections import defaultdict
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.interfaces import IRoutesMapper
 
 from ttfrog.db.manager import db
-from ttfrog.db import transaction_log
 
 
 def get_all_routes(request):
     routes = {
-        'static': '/static',
+        "static": "/static",
     }
     uri_pattern = re.compile(r"^([^\{\*]+)")
     mapper = request.registry.queryUtility(IRoutesMapper)
     for route in mapper.get_routes():
-        if route.name.startswith('__'):
+        if route.name.startswith("__"):
             continue
         m = uri_pattern.search(route.pattern)
         if m:
-            routes[route.name] = m .group(0)
+            routes[route.name] = m.group(0)
     return routes
 
 
@@ -36,17 +34,14 @@ class BaseController:
         self._record = None
         self._form = None
 
-        self.config = {
-            'static_url': '/static',
-            'project_name': 'TTFROG'
-        }
+        self.config = {"static_url": "/static", "project_name": "TTFROG"}
         self.configure_for_model()
 
     @property
     def slug(self):
         if not self._slug:
-            parts = self.request.matchdict.get('uri', '').split('-')
-            self._slug = parts[0].replace('/', '')
+            parts = self.request.matchdict.get("uri", "").split("-")
+            self._slug = parts[0].replace("/", "")
         return self._slug
 
     @property
@@ -78,12 +73,12 @@ class BaseController:
     @property
     def resources(self):
         return [
-            {'type': 'style', 'uri': 'css/styles.css'},
+            {"type": "style", "uri": "css/styles.css"},
         ]
 
     def configure_for_model(self):
-        if 'all_records' not in self.attrs:
-            self.attrs['all_records'] = db.query(self.model).all()
+        if "all_records" not in self.attrs:
+            self.attrs["all_records"] = db.query(self.model).all()
 
     def template_context(self, **kwargs) -> dict:
         return dict(
@@ -103,14 +98,14 @@ class BaseController:
     def populate_association(self, key, formdata):
         populated = []
         for field in formdata:
-            map_id = field.pop('id')
+            map_id = field.pop("id")
             map_id = int(map_id) if map_id else 0
             if not field[key]:
                 continue
             elif not map_id:
                 populated.append(field)
             else:
-                field['id'] = map_id
+                field["id"] = map_id
                 populated.append(field)
         return populated
 
