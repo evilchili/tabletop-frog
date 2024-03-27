@@ -96,6 +96,7 @@ class CharacterClassAttributeMap(BaseObject, IterableMixin):
         primaryjoin="CharacterClassAttributeMap.character_id == CharacterClassMap.character_id",
         secondaryjoin="CharacterClass.id == CharacterClassMap.character_class_id",
         viewonly=True,
+        uselist=False,
     )
 
 
@@ -117,13 +118,17 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
     proficiencies = Column(String)
 
     class_map = relationship("CharacterClassMap", cascade="all,delete,delete-orphan")
-    classes = association_proxy("class_map", "id", creator=class_map_creator)
+    _classes = association_proxy("class_map", "id", creator=class_map_creator)
 
     character_class_attribute_map = relationship("CharacterClassAttributeMap", cascade="all,delete,delete-orphan")
-    class_attributes = association_proxy("character_class_attribute_map", "id", creator=attr_map_creator)
+    _class_attributes = association_proxy("character_class_attribute_map", "id", creator=attr_map_creator)
 
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"), nullable=False, default="1")
     ancestry = relationship("Ancestry", uselist=False)
+
+    @property
+    def classes(self):
+        return dict([(mapping.character_class.name, mapping.character_class) for mapping in self.class_map])
 
     @property
     def traits(self):
@@ -137,6 +142,10 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
     def levels(self):
         return dict([(mapping.character_class.name, mapping.level) for mapping in self.class_map])
 
+    @property
+    def class_attributes(self):
+        return dict([(mapping.class_attribute.name, mapping.option) for mapping in self.character_class_attribute_map])
+
     def add_class(self, newclass, level=1):
         if level == 0:
             return self.remove_class(newclass)
@@ -145,7 +154,24 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
             level_in_class = level_in_class[0]
             level_in_class.level = level
             return
-        self.classes.append(CharacterClassMap(character_id=self.id, character_class_id=newclass.id, level=level))
+        self._classes.append(CharacterClassMap(character_id=self.id, character_class_id=newclass.id, level=level))
 
     def remove_class(self, target):
         self.class_map = [m for m in self.class_map if m.id != target.id]
+        for mapping in self.character_class_attribute_map:
+            if mapping.character_class.id == target.id:
+                self.remove_class_attribute(mapping.class_attribute)
+
+    def remove_class_attribute(self, attribute):
+        self.character_class_attribute_map = [m for m in self.character_class_attribute_map if m.id != attribute.id]
+
+    def add_class_attribute(self, attribute, option):
+        for thisclass in self.classes.values():
+            if attribute.name in thisclass.attributes_by_level.get(self.levels[thisclass.name], {}):
+                self._class_attributes.append(
+                    CharacterClassAttributeMap(
+                        character_id=self.id, class_attribute_id=attribute.id, option_id=option.id
+                    )
+                )
+                return True
+        return False

@@ -26,16 +26,26 @@ def test_create_character(db, classes, ancestries):
         db.add(char)
         assert char.levels == {"fighter": 1}
         assert char.level == 1
-        assert char.class_attributes == []
+        assert char.class_attributes == {}
+
+        # 'fighting style' is available, but not at this level
+        fighting_style = char.classes["fighter"].attributes_by_level[2]["Fighting Style"]
+        assert char.add_class_attribute(fighting_style, fighting_style.options[0]) is False
+        db.add(char)
+        assert char.class_attributes == {}
 
         # level up
         char.add_class(classes["fighter"], level=2)
         db.add(char)
         assert char.levels == {"fighter": 2}
         assert char.level == 2
-        assert char.class_attributes == []
 
-        # multiclass
+        # Assign the fighting style
+        assert char.add_class_attribute(fighting_style, fighting_style.options[0])
+        db.add(char)
+        assert char.class_attributes[fighting_style.name] == fighting_style.options[0]
+
+        # classes
         char.add_class(classes["rogue"], level=1)
         db.add(char)
         assert char.level == 3
@@ -51,6 +61,7 @@ def test_create_character(db, classes, ancestries):
         char.remove_class(classes["fighter"])
         db.add(char)
 
-        # ensure we're not persisting any orphan records in the map table
+        # ensure we're not persisting any orphan records in the map tables
         dump = db.dump()
         assert dump["class_map"] == []
+        assert dump["character_class_attribute_map"] == []

@@ -16,12 +16,14 @@ class ClassAttributeMap(BaseObject, IterableMixin):
     class_attribute_id = Column(Integer, ForeignKey("class_attribute.id"), primary_key=True)
     character_class_id = Column(Integer, ForeignKey("character_class.id"), primary_key=True)
     level = Column(Integer, nullable=False, info={"min": 1, "max": 20}, default=1)
+    attribute = relationship("ClassAttribute", uselist=False, viewonly=True, lazy="immediate")
 
 
 class ClassAttribute(BaseObject, IterableMixin):
     __tablename__ = "class_attribute"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
+    options = relationship("ClassAttributeOption", cascade="all,delete,delete-orphan", lazy="immediate")
 
     def __repr__(self):
         return f"{self.id}: {self.name}"
@@ -32,7 +34,6 @@ class ClassAttributeOption(BaseObject, IterableMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     attribute_id = Column(Integer, ForeignKey("class_attribute.id"), nullable=False)
-    # attribute = relationship("ClassAttribute", uselist=False)
 
 
 class CharacterClass(*Bases, SavingThrowsMixin, SkillsMixin):
@@ -42,4 +43,11 @@ class CharacterClass(*Bases, SavingThrowsMixin, SkillsMixin):
     hit_dice = Column(String, default="1d6")
     hit_dice_stat = Column(Enum(StatsEnum))
     proficiencies = Column(String)
-    attributes = relationship("ClassAttributeMap")
+    attributes = relationship("ClassAttributeMap", cascade="all,delete,delete-orphan", lazy="immediate")
+
+    @property
+    def attributes_by_level(self):
+        by_level = {}
+        for mapping in self.attributes:
+            by_level[mapping.level] = {mapping.attribute.name: mapping.attribute}
+        return by_level
