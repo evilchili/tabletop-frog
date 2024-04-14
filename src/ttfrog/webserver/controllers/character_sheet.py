@@ -45,7 +45,8 @@ class ClassAttributesFormField(FormField):
     def process(self, *args, **kwargs):
         super().process(*args, **kwargs)
         self.character_class_map = db.query(CharacterClassAttributeMap).get(self.data["id"])
-        self.label.text = self.character_class_map.character_class[0].name
+        if self.character_class_map:
+            self.label.text = self.character_class_map.character_class.name
 
 
 class ClassAttributesForm(ModelForm):
@@ -56,6 +57,7 @@ class ClassAttributesForm(ModelForm):
 
     def __init__(self, formdata=None, obj=None, prefix=None):
         if obj:
+            logging.debug(f"Loading existing attribute {self = } {formdata = } {obj = }")
             obj = db.query(CharacterClassAttributeMap).get(obj)
         super().__init__(formdata=formdata, obj=obj, prefix=prefix)
 
@@ -77,6 +79,7 @@ class MulticlassForm(ModelForm):
         to an instance. This will ensure that the rendered field is populated with the current
         value of the class_map.
         """
+        logging.debug(f"Loading existing class {self = } {formdata = } {obj = }")
         if obj:
             obj = db.query(CharacterClassMap).get(obj)
         super().__init__(formdata=formdata, obj=obj, prefix=prefix)
@@ -90,10 +93,10 @@ class CharacterForm(ModelForm):
     save = SubmitField()
     delete = SubmitField()
     ancestry_id = DeferredSelectField("Ancestry", model=Ancestry, default=1, validate_choice=True, widget=Select())
-    classes = FieldList(FormField(MulticlassForm, label=None, widget=ListWidget()), min_entries=0)
+    class_list = FieldList(FormField(MulticlassForm, label=None, widget=ListWidget()), min_entries=0)
     newclass = FormField(MulticlassForm, widget=ListWidget())
 
-    class_attributes = FieldList(
+    attribute_list = FieldList(
         ClassAttributesFormField(ClassAttributesForm, widget=ClassAttributeWidget()), min_entries=1
     )
 
@@ -115,12 +118,12 @@ class CharacterSheet(BaseController):
         Validate multiclass fields in form data.
         """
         ret = super().validate()
-        if not self.form.data["classes"]:
+        if not self.form.data["class_list"]:
             return ret
 
         err = ""
         total_level = 0
-        for field in self.form.data["classes"]:
+        for field in self.form.data["class_list"]:
             level = field.get("level")
             total_level += level
             if level not in VALID_LEVELS:
@@ -134,40 +137,16 @@ class CharacterSheet(BaseController):
         return ret and True
 
     def add_class_attributes(self):
-        # prefetch the records for each of the character's classes
-        classes_by_id = {
-            c.id: c
-            for c in db.query(CharacterClass)
-            .filter(CharacterClass.id.in_(c.character_class_id for c in self.record.class_map))
-            .all()
-        }
-
-        assigned = [int(m.class_attribute_id) for m in self.record.character_class_attribute_map]
-        logging.debug(f"{assigned = }")
-
         # step through the list of class mappings for this character
-        for class_map in self.record.class_map:
-            thisclass = classes_by_id[class_map.character_class_id]
-
-            # assign each class attribute available at the character's current
-            # level to the list of the character's class attributes
-            for attr_map in [a for a in thisclass.attributes if a.level <= class_map.level]:
-                # when creating a record, assign the first of the available
-                # options to the character's class attribute.
-                default_option = (
-                    db.query(ClassAttributeOption).filter_by(attribute_id=attr_map.class_attribute_id).first()
-                )
-
-                if attr_map.class_attribute_id not in assigned:
-                    self.record.class_attributes.append(
-                        {
-                            "class_attribute_id": attr_map.class_attribute_id,
-                            "option_id": default_option.id,
-                        }
-                    )
+        for class_name, class_def in self.record.classes.items():
+            logging.error(f"{class_name = }, {class_def = }")
+            for level in range(1, self.record.levels[class_name] + 1):
+                for attr in class_def.attributes_by_level.get(level, None):
+                    self.record.add_class_attribute(attr, attr.options[0])
 
     def save_callback(self):
-        self.add_class_attributes()
+        #  self.add_class_attributes()
+        pass
 
     def populate(self):
         """
@@ -176,16 +155,16 @@ class CharacterSheet(BaseController):
         """
 
         # multiclass form
-        classes_formdata = self.form.data["classes"]
+        classes_formdata = self.form.data["class_list"]
         classes_formdata.append(self.form.data["newclass"])
-        del self.form.classes
+        del self.form.class_list
         del self.form.newclass
 
         # class attributes
-        attrs_formdata = self.form.data["class_attributes"]
-        del self.form.class_attributes
+        attrs_formdata = self.form.data["attribute_list"]
+        del self.form.attribute_list
 
         super().populate()
 
-        self.record.classes = self.populate_association("character_class_id", classes_formdata)
-        self.record.class_attributes = self.populate_association("class_attribute_id", attrs_formdata)
+        self.record.class_list = self.populate_association("character_class_id", classes_formdata)
+        self.record.attribute_list = self.populate_association("class_attribute_id", attrs_formdata)

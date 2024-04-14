@@ -1,8 +1,11 @@
 from ttfrog.db import schema
 
 
-def test_create_character(db, classes, ancestries):
+def test_create_character(db, classes_factory, ancestries_factory):
     with db.transaction():
+        # load the fixtures so they are bound to the current session
+        classes = classes_factory()
+        ancestries = ancestries_factory()
         darkvision = db.session.query(schema.AncestryTrait).filter_by(name="Darkvision")[0]
 
         # create a human character (the default)

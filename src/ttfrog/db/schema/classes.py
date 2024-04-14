@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -47,7 +49,7 @@ class CharacterClass(*Bases, SavingThrowsMixin, SkillsMixin):
 
     @property
     def attributes_by_level(self):
-        by_level = {}
+        by_level = defaultdict(list)
         for mapping in self.attributes:
             by_level[mapping.level] = {mapping.attribute.name: mapping.attribute}
         return by_level

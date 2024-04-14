@@ -16,7 +16,7 @@
     <div>
         {{ field('name') }}
         {{ field('ancestry_id') }} 
-        {% for obj in c.form['classes'] %}
+        {% for obj in c.form['class_list'] %}
             {{ obj(class='multiclass') }}
         {% endfor %}
         <span class='label'>Add Class:</span> {{ c.form['newclass'](class='multiclass') }}
@@ -143,8 +143,8 @@
         </div>
         <div class='card'>
             <div class='label'>Attributes</div>
-            {% if c.record.class_attributes %}
-            {{ field('class_attributes') }}
+            {% if c.record.attribute_list %}
+            {{ field('attribute_list') }}
             {% endif %}
         </div>
         <div class='card'>
@@ -173,7 +173,7 @@
     {{ field }}: {{ msg }}
 {% endfor %}
 </code>
-{{ c.record.class_attributes }}
+{{ c.record }}
 </code>
 {% endblock %}
 
