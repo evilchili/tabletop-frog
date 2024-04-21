@@ -121,7 +121,6 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
     hit_points = Column(Integer, default=1, nullable=False, info={"min": 0, "max": 999})
     max_hit_points = Column(Integer, default=1, nullable=False, info={"min": 0, "max": 999})
     temp_hit_points = Column(Integer, default=0, nullable=False, info={"min": 0, "max": 999})
-    speed = Column(Integer, nullable=False, default=30, info={"min": 0, "max": 99})
     str = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
     dex = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
     con = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
@@ -146,6 +145,14 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
     @property
     def traits(self):
         return self.ancestry.traits
+
+    @property
+    def size(self):
+        return self.ancestry.size
+
+    @property
+    def speed(self):
+        return self.ancestry.speed
 
     @property
     def level(self):
