@@ -32,14 +32,18 @@ def db(monkeypatch):
 @pytest.fixture
 def classes_factory(db):
     load_fixture(db, "classes")
+
     def factory():
         return dict((rec.name, rec) for rec in db.session.query(schema.CharacterClass).all())
+
     return factory
 
 
 @pytest.fixture
 def ancestries_factory(db):
     load_fixture(db, "ancestry")
+
     def factory():
         return dict((rec.name, rec) for rec in db.session.query(schema.Ancestry).all())
+
     return factory

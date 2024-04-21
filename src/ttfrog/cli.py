@@ -105,6 +105,7 @@ def setup(context: typer.Context):
 @db_app.command()
 def list(context: typer.Context):
     from ttfrog.db.manager import db
+
     print("\n".join(sorted(db.tables.keys())))
 
 
@@ -114,6 +115,7 @@ def dump(context: typer.Context):
     Dump tables (or the entire database) as a JSON blob.
     """
     from ttfrog.db.manager import db
+
     db.init()
     print(db.dump(context.args))
 

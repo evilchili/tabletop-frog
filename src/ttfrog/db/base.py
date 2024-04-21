@@ -23,6 +23,7 @@ class BaseObject(_BaseObject):
     """
     Allows for iterating over Model objects' column names and values
     """
+
     __abstract__ = True
 
     def __iter__(self):

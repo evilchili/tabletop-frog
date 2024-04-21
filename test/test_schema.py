@@ -1,4 +1,5 @@
 import json
+
 from ttfrog.db import schema
 
 

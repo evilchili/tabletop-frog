@@ -10,7 +10,6 @@ from pyramid_sqlalchemy import Session, init_sqlalchemy
 from pyramid_sqlalchemy import metadata as _metadata
 from sqlalchemy import create_engine
 
-
 import ttfrog.db.schema
 from ttfrog.path import database
 
@@ -20,7 +19,7 @@ assert ttfrog.db.schema
 class AlchemyEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
-            return getattr(obj, '__json__')()
+            return getattr(obj, "__json__")()
         except (AttributeError, NotImplementedError):  # pragma: no cover
             return super().default(obj)
 

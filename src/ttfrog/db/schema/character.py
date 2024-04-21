@@ -28,7 +28,7 @@ def attr_map_creator(fields):
 
 class AncestryTraitMap(BaseObject):
     __tablename__ = "trait_map"
-    __table_args__ = (UniqueConstraint("ancestry_id", "ancestry_trait_id"), )
+    __table_args__ = (UniqueConstraint("ancestry_id", "ancestry_trait_id"),)
     id = Column(Integer, primary_key=True, autoincrement=True)
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"))
     ancestry_trait_id = Column(Integer, ForeignKey("ancestry_trait.id"))
@@ -67,7 +67,7 @@ class AncestryTrait(BaseObject):
 
 class CharacterClassMap(BaseObject):
     __tablename__ = "class_map"
-    __table_args__ = (UniqueConstraint("character_id", "character_class_id"), )
+    __table_args__ = (UniqueConstraint("character_id", "character_class_id"),)
     id = Column(Integer, primary_key=True, autoincrement=True)
     character_id = Column(Integer, ForeignKey("character.id"), nullable=False)
     character_class_id = Column(Integer, ForeignKey("character_class.id"), nullable=False)
@@ -82,7 +82,7 @@ class CharacterClassMap(BaseObject):
 
 class CharacterClassAttributeMap(BaseObject):
     __tablename__ = "character_class_attribute_map"
-    __table_args__ = (UniqueConstraint("character_id", "class_attribute_id"), )
+    __table_args__ = (UniqueConstraint("character_id", "class_attribute_id"),)
     id = Column(Integer, primary_key=True, autoincrement=True)
     character_id = Column(Integer, ForeignKey("character.id"), nullable=False)
     class_attribute_id = Column(Integer, ForeignKey("class_attribute.id"), nullable=False)
