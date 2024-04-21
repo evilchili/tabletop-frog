@@ -85,10 +85,7 @@ class SQLDatabaseManager:
         return json.dumps(results, indent=2, cls=AlchemyEncoder)
 
     def __getattr__(self, name: str):
-        try:
-            return self.tables[name]
-        except KeyError:
-            raise AttributeError(f"{self} does not contain the attribute '{name}'.")
+        return self.query(getattr(ttfrog.db.schema, name))
 
 
 db = SQLDatabaseManager()
