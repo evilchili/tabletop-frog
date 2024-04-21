@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import json
 import os
 from contextlib import contextmanager
 from functools import cached_property
@@ -9,13 +10,19 @@ from pyramid_sqlalchemy import Session, init_sqlalchemy
 from pyramid_sqlalchemy import metadata as _metadata
 from sqlalchemy import create_engine
 
+
 import ttfrog.db.schema
 from ttfrog.path import database
 
-# from sqlalchemy.exc import IntegrityError
+assert ttfrog.db.schema
 
 
-ttfrog.db.schema
+class AlchemyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        try:
+            return getattr(obj, '__json__')()
+        except (AttributeError, NotImplementedError):  # pragma: no cover
+            return super().default(obj)
 
 
 class SQLDatabaseManager:
@@ -49,11 +56,11 @@ class SQLDatabaseManager:
             yield tm
             try:
                 tm.commit()
-            except Exception:
+            except Exception:  # pragam: no cover
                 tm.abort()
                 raise
 
-    def add(self, *args, **kwargs):
+    def add_or_update(self, *args, **kwargs):
         self.session.add(*args, **kwargs)
         self.session.flush()
 
@@ -71,11 +78,12 @@ class SQLDatabaseManager:
         init_sqlalchemy(self.engine)
         self.metadata.create_all(self.engine)
 
-    def dump(self):
+    def dump(self, names: list = []):
         results = {}
         for table_name, table in self.tables.items():
-            results[table_name] = [row for row in self.query(table).all()]
-        return results
+            if not names or table_name in names:
+                results[table_name] = [dict(row._mapping) for row in self.query(table).all()]
+        return json.dumps(results, indent=2, cls=AlchemyEncoder)
 
     def __getattr__(self, name: str):
         try:

@@ -2,7 +2,7 @@ import enum
 
 import nanoid
 from nanoid_dictionary import human_alphabet
-from pyramid_sqlalchemy import BaseObject
+from pyramid_sqlalchemy import BaseObject as _BaseObject
 from slugify import slugify
 from sqlalchemy import Column, String
 
@@ -19,10 +19,11 @@ class SlugMixin:
         return "-".join([self.slug, slugify(self.name.title().replace(" ", ""), ok="", only_ascii=True, lower=False)])
 
 
-class IterableMixin:
+class BaseObject(_BaseObject):
     """
     Allows for iterating over Model objects' column names and values
     """
+    __abstract__ = True
 
     def __iter__(self):
         values = vars(self)
@@ -42,14 +43,11 @@ class IterableMixin:
                     relvals.append(rel)
             yield relname, relvals
 
-    def __json__(self, request):
-        serialized = dict()
-        for key, value in self:
-            try:
-                serialized[key] = getattr(self.value, "__json__")(request)
-            except AttributeError:
-                serialized[key] = value
-        return serialized
+    def __json__(self):
+        """
+        Provide a custom JSON encoder.
+        """
+        raise NotImplementedError()
 
     def __repr__(self):
         return str(dict(self))
@@ -90,7 +88,7 @@ class EnumField(enum.Enum):
     A serializable enum.
     """
 
-    def __json__(self, request):
+    def __json__(self):
         return self.value
 
 
@@ -116,6 +114,3 @@ CREATURE_TYPES = [
 ]
 CreatureTypesEnum = EnumField("CreatureTypesEnum", ((k, k) for k in CREATURE_TYPES))
 StatsEnum = EnumField("StatsEnum", ((k, k) for k in STATS))
-
-# class Table(*Bases):
-Bases = [BaseObject, IterableMixin, SlugMixin]

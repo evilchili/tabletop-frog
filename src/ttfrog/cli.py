@@ -36,11 +36,14 @@ HOST={default_host}
 PORT={default_port}
 """
 
+db_app = typer.Typer()
 app = typer.Typer()
+app.add_typer(db_app, name="db", help="Manage the database.")
 app_state = dict()
 
 
 @app.callback()
+@db_app.callback()
 def main(
     context: typer.Context,
     root: Optional[Path] = typer.Option(
@@ -57,20 +60,6 @@ def main(
         level=logging.DEBUG if debug else logging.INFO,
         handlers=[RichHandler(rich_tracebacks=True, tracebacks_suppress=[typer])],
     )
-
-
-@app.command()
-def setup(context: typer.Context):
-    """
-    (Re)Initialize TableTop Frog. Idempotent; will preserve any existing configuration.
-    """
-    from ttfrog.db.bootstrap import bootstrap
-
-    if not os.path.exists(app_state["env"]):
-        app_state["env"].parent.mkdir(parents=True, exist_ok=True)
-        app_state["env"].write_text(dedent(SETUP_HELP))
-        print(f"Wrote defaults file {app_state['env']}.")
-    bootstrap()
 
 
 @app.command()
@@ -97,6 +86,36 @@ def serve(
     print("Starting TableTop Frog server...")
     bootstrap()
     application.start(host=host, port=port, debug=debug)
+
+
+@db_app.command()
+def setup(context: typer.Context):
+    """
+    (Re)Initialize TableTop Frog. Idempotent; will preserve any existing configuration.
+    """
+    from ttfrog.db.bootstrap import bootstrap
+
+    if not os.path.exists(app_state["env"]):
+        app_state["env"].parent.mkdir(parents=True, exist_ok=True)
+        app_state["env"].write_text(dedent(SETUP_HELP))
+        print(f"Wrote defaults file {app_state['env']}.")
+    bootstrap()
+
+
+@db_app.command()
+def list(context: typer.Context):
+    from ttfrog.db.manager import db
+    print("\n".join(sorted(db.tables.keys())))
+
+
+@db_app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def dump(context: typer.Context):
+    """
+    Dump tables (or the entire database) as a JSON blob.
+    """
+    from ttfrog.db.manager import db
+    db.init()
+    print(db.dump(context.args))
 
 
 if __name__ == "__main__":

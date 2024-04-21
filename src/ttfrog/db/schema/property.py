@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, UniqueConstraint
 
-from ttfrog.db.base import BaseObject, Bases, IterableMixin
+from ttfrog.db.base import BaseObject
 
 __all__ = [
     "Skill",
@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 
-class Skill(*Bases):
+class Skill(BaseObject):
     __tablename__ = "skill"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, index=True, unique=True)
@@ -19,7 +19,7 @@ class Skill(*Bases):
         return str(self.name)
 
 
-class Proficiency(*Bases):
+class Proficiency(BaseObject):
     __tablename__ = "proficiency"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, index=True, unique=True)
@@ -28,7 +28,7 @@ class Proficiency(*Bases):
         return str(self.name)
 
 
-class Modifier(BaseObject, IterableMixin):
+class Modifier(BaseObject):
     __tablename__ = "modifier"
     __table_args__ = (UniqueConstraint("source_table_name", "source_table_id", "value", "type", "target"),)
     id = Column(Integer, primary_key=True, autoincrement=True)

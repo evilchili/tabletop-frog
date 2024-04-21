@@ -3,7 +3,7 @@ from collections import defaultdict
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from ttfrog.db.base import BaseObject, Bases, IterableMixin, SavingThrowsMixin, SkillsMixin, StatsEnum
+from ttfrog.db.base import BaseObject, SavingThrowsMixin, SkillsMixin, StatsEnum
 
 __all__ = [
     "ClassAttributeMap",
@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 
-class ClassAttributeMap(BaseObject, IterableMixin):
+class ClassAttributeMap(BaseObject):
     __tablename__ = "class_attribute_map"
     class_attribute_id = Column(Integer, ForeignKey("class_attribute.id"), primary_key=True)
     character_class_id = Column(Integer, ForeignKey("character_class.id"), primary_key=True)
@@ -21,7 +21,7 @@ class ClassAttributeMap(BaseObject, IterableMixin):
     attribute = relationship("ClassAttribute", uselist=False, viewonly=True, lazy="immediate")
 
 
-class ClassAttribute(BaseObject, IterableMixin):
+class ClassAttribute(BaseObject):
     __tablename__ = "class_attribute"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
@@ -31,14 +31,14 @@ class ClassAttribute(BaseObject, IterableMixin):
         return f"{self.id}: {self.name}"
 
 
-class ClassAttributeOption(BaseObject, IterableMixin):
+class ClassAttributeOption(BaseObject):
     __tablename__ = "class_attribute_option"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     attribute_id = Column(Integer, ForeignKey("class_attribute.id"), nullable=False)
 
 
-class CharacterClass(*Bases, SavingThrowsMixin, SkillsMixin):
+class CharacterClass(BaseObject, SavingThrowsMixin, SkillsMixin):
     __tablename__ = "character_class"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, index=True, unique=True)

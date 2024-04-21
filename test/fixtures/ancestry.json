@@ -13,7 +13,7 @@
     "AncestryTraitMap": [
         {"ancestry_id": 1, "ancestry_trait_id": 1, "level": 1},
         {"ancestry_id": 2, "ancestry_trait_id": 2, "level": 1},
-        {"ancestry_id": 2, "ancestry_trait_id": 2, "level": 1},
+        {"ancestry_id": 2, "ancestry_trait_id": 3, "level": 1},
         {"ancestry_id": 3, "ancestry_trait_id": 3, "level": 1}
     ]
 }

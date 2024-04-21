@@ -2,7 +2,7 @@ from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text, UniqueCo
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 
-from ttfrog.db.base import BaseObject, Bases, CreatureTypesEnum, IterableMixin, SavingThrowsMixin, SkillsMixin
+from ttfrog.db.base import BaseObject, CreatureTypesEnum, SavingThrowsMixin, SkillsMixin, SlugMixin
 
 __all__ = [
     "Ancestry",
@@ -28,6 +28,7 @@ def attr_map_creator(fields):
 
 class AncestryTraitMap(BaseObject):
     __tablename__ = "trait_map"
+    __table_args__ = (UniqueConstraint("ancestry_id", "ancestry_trait_id"), )
     id = Column(Integer, primary_key=True, autoincrement=True)
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"))
     ancestry_trait_id = Column(Integer, ForeignKey("ancestry_trait.id"))
@@ -35,7 +36,7 @@ class AncestryTraitMap(BaseObject):
     level = Column(Integer, nullable=False, info={"min": 1, "max": 20})
 
 
-class Ancestry(*Bases):
+class Ancestry(BaseObject):
     """
     A character ancestry ("race"), which has zero or more AncestryTraits.
     """
@@ -44,13 +45,13 @@ class Ancestry(*Bases):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, index=True, unique=True)
     creature_type = Column(Enum(CreatureTypesEnum))
-    traits = relationship("AncestryTraitMap", lazy="immediate")
+    _traits = relationship("AncestryTraitMap", lazy="immediate")
 
     def __repr__(self):
         return self.name
 
 
-class AncestryTrait(BaseObject, IterableMixin):
+class AncestryTrait(BaseObject):
     """
     A trait granted to a character via its Ancestry.
     """
@@ -64,12 +65,12 @@ class AncestryTrait(BaseObject, IterableMixin):
         return self.name
 
 
-class CharacterClassMap(BaseObject, IterableMixin):
+class CharacterClassMap(BaseObject):
     __tablename__ = "class_map"
+    __table_args__ = (UniqueConstraint("character_id", "character_class_id"), )
     id = Column(Integer, primary_key=True, autoincrement=True)
     character_id = Column(Integer, ForeignKey("character.id"), nullable=False)
     character_class_id = Column(Integer, ForeignKey("character_class.id"), nullable=False)
-    mapping = UniqueConstraint(character_id, character_class_id)
     level = Column(Integer, nullable=False, info={"min": 1, "max": 20}, default=1)
 
     character_class = relationship("CharacterClass", lazy="immediate")
@@ -79,13 +80,13 @@ class CharacterClassMap(BaseObject, IterableMixin):
         return "{self.character.name}, {self.character_class.name}, level {self.level}"
 
 
-class CharacterClassAttributeMap(BaseObject, IterableMixin):
+class CharacterClassAttributeMap(BaseObject):
     __tablename__ = "character_class_attribute_map"
+    __table_args__ = (UniqueConstraint("character_id", "class_attribute_id"), )
     id = Column(Integer, primary_key=True, autoincrement=True)
     character_id = Column(Integer, ForeignKey("character.id"), nullable=False)
     class_attribute_id = Column(Integer, ForeignKey("class_attribute.id"), nullable=False)
     option_id = Column(Integer, ForeignKey("class_attribute_option.id"), nullable=False)
-    mapping = UniqueConstraint(character_id, class_attribute_id)
 
     class_attribute = relationship("ClassAttribute", lazy="immediate")
     option = relationship("ClassAttributeOption", lazy="immediate")
@@ -100,7 +101,7 @@ class CharacterClassAttributeMap(BaseObject, IterableMixin):
     )
 
 
-class Character(*Bases, SavingThrowsMixin, SkillsMixin):
+class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
     __tablename__ = "character"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, default="New Character", nullable=False)
@@ -132,7 +133,7 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
 
     @property
     def traits(self):
-        return [mapping.trait for mapping in self.ancestry.traits]
+        return [mapping.trait for mapping in self.ancestry._traits]
 
     @property
     def level(self):
@@ -172,8 +173,11 @@ class Character(*Bases, SavingThrowsMixin, SkillsMixin):
 
     def add_class_attribute(self, attribute, option):
         for thisclass in self.classes.values():
-            # this test is failing?
-            if attribute.name in thisclass.attributes_by_level.get(self.levels[thisclass.name], {}):
+            current_level = self.levels[thisclass.name]
+            current_attributes = thisclass.attributes_by_level.get(current_level, {})
+            if attribute.name in current_attributes:
+                if attribute.name in self.class_attributes:
+                    return True
                 self.attribute_list.append(
                     CharacterClassAttributeMap(
                         character_id=self.id, class_attribute_id=attribute.id, option_id=option.id
