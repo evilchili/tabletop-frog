@@ -26,6 +26,16 @@ def test_manage_character(db, classes_factory, ancestries_factory):
         assert char.ancestry.name == "tiefling"
         assert darkvision in char.traits
 
+        # switch ancestry to dragonborn and assert darkvision persists
+        char.ancestry = ancestries["dragonborn"]
+        db.add_or_update(char)
+        assert darkvision in char.traits
+
+        # switch ancestry to human and assert darkvision is removed
+        char.ancestry = ancestries["human"]
+        db.add_or_update(char)
+        assert darkvision not in char.traits
+
         # assign a class and level
         char.add_class(classes["fighter"], level=1)
         db.add_or_update(char)
@@ -34,7 +44,8 @@ def test_manage_character(db, classes_factory, ancestries_factory):
         assert char.class_attributes == {}
 
         # 'fighting style' is available, but not at this level
-        fighting_style = char.classes["fighter"].attributes_by_level[2]["Fighting Style"]
+        fighter = classes["fighter"]
+        fighting_style = fighter.attributes_by_level[2]["Fighting Style"]
         assert char.add_class_attribute(fighting_style, fighting_style.options[0]) is False
         db.add_or_update(char)
         assert char.class_attributes == {}
@@ -71,3 +82,29 @@ def test_manage_character(db, classes_factory, ancestries_factory):
         dump = json.loads(db.dump())
         assert dump["class_map"] == []
         assert dump["character_class_attribute_map"] == []
+
+
+def test_ancestries(db):
+    with db.transaction():
+        # create the Pygmy Orc ancestry
+        porc = schema.Ancestry(
+            name="Pygmy Orc",
+            size="Small",
+            speed=25,
+        )
+        db.add_or_update(porc)
+        assert porc.name == "Pygmy Orc"
+        assert porc.creature_type == "humanoid"
+        assert porc.size == "Small"
+        assert porc.speed == 25
+
+        # create the Relentless Endurance trait and add it to the Orc
+        endurance = schema.AncestryTrait(name="Relentless Endurance")
+        db.add_or_update(endurance)
+        porc.add_trait(endurance, level=1)
+        db.add_or_update(porc)
+        assert endurance in porc.traits
+
+        # now create an orc character and assert it gets Relentless Endurance
+        grognak = schema.Character(name="Grognak the Mighty", ancestry=porc)
+        assert endurance in grognak.traits

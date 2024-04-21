@@ -113,5 +113,8 @@ CREATURE_TYPES = [
     "plant",
     "undead",
 ]
+SIZES = ["Tiny", "Small", "Medium", "Large", "Huge", "Gargantuan"]
+
 CreatureTypesEnum = EnumField("CreatureTypesEnum", ((k, k) for k in CREATURE_TYPES))
 StatsEnum = EnumField("StatsEnum", ((k, k) for k in STATS))
+SizesEnum = EnumField("SizesEnum", ((k, k) for k in SIZES))

@@ -26,7 +26,8 @@ def db(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
     monkeypatch.setenv("DEBUG", "1")
     _db.init()
-    return _db
+    yield _db
+    _db.metadata.drop_all(bind=_db.engine)
 
 
 @pytest.fixture

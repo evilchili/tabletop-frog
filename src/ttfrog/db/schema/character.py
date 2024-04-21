@@ -2,7 +2,7 @@ from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text, UniqueCo
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 
-from ttfrog.db.base import BaseObject, CreatureTypesEnum, SavingThrowsMixin, SkillsMixin, SlugMixin
+from ttfrog.db.base import BaseObject, CreatureTypesEnum, SavingThrowsMixin, SizesEnum, SkillsMixin, SlugMixin
 
 __all__ = [
     "Ancestry",
@@ -44,8 +44,20 @@ class Ancestry(BaseObject):
     __tablename__ = "ancestry"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, index=True, unique=True)
-    creature_type = Column(Enum(CreatureTypesEnum))
+    creature_type = Column(Enum(CreatureTypesEnum), nullable=False, default="humanoid")
+    size = Column(Enum(SizesEnum), nullable=False, default="Medium")
+    speed = Column(Integer, nullable=False, default=30, info={"min": 0, "max": 99})
     _traits = relationship("AncestryTraitMap", lazy="immediate")
+
+    @property
+    def traits(self):
+        return [mapping.trait for mapping in self._traits]
+
+    def add_trait(self, trait, level=1):
+        if trait not in self.traits:
+            self._traits.append(AncestryTraitMap(ancestry_id=self.id, ancestry_trait_id=trait.id, level=level))
+            return True
+        return False
 
     def __repr__(self):
         return self.name
@@ -133,7 +145,7 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
 
     @property
     def traits(self):
-        return [mapping.trait for mapping in self.ancestry._traits]
+        return self.ancestry.traits
 
     @property
     def level(self):
