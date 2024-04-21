@@ -70,5 +70,4 @@ def test_manage_character(db, classes_factory, ancestries_factory):
         # ensure we're not persisting any orphan records in the map tables
         dump = json.loads(db.dump())
         assert dump["class_map"] == []
-        assert dump["class_map"] == []
         assert dump["character_class_attribute_map"] == []
