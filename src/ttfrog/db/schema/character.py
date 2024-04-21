@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
+from collections import defaultdict
+
+from sqlalchemy import Column, Enum, ForeignKey, Integer, Float, String, Text, UniqueConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from ttfrog.db.base import BaseObject, CreatureTypesEnum, SavingThrowsMixin, SizesEnum, SkillsMixin, SlugMixin
 
@@ -8,9 +10,11 @@ __all__ = [
     "Ancestry",
     "AncestryTrait",
     "AncestryTraitMap",
+    "AncestryModifier",
     "CharacterClassMap",
     "CharacterClassAttributeMap",
     "Character",
+    "Modifier",
 ]
 
 
@@ -36,6 +40,7 @@ class AncestryTraitMap(BaseObject):
     level = Column(Integer, nullable=False, info={"min": 1, "max": 20})
 
 
+# XXX: Replace this with a many-to-many on the Modifiers table. Will need for proficiecies too.
 class Ancestry(BaseObject):
     """
     A character ancestry ("race"), which has zero or more AncestryTraits.
@@ -48,6 +53,7 @@ class Ancestry(BaseObject):
     size = Column(Enum(SizesEnum), nullable=False, default="Medium")
     speed = Column(Integer, nullable=False, default=30, info={"min": 0, "max": 99})
     _traits = relationship("AncestryTraitMap", lazy="immediate")
+    modifiers = relationship("AncestryModifier", lazy="immediate")
 
     @property
     def traits(self):
@@ -59,8 +65,31 @@ class Ancestry(BaseObject):
             return True
         return False
 
+    def add_modifier(self, modifier):
+        if modifier not in self.modifiers:
+            self.modifiers.append(modifier)
+            return True
+        return False
+
     def __repr__(self):
         return self.name
+
+
+class AncestryModifier(BaseObject):
+    """
+    A modifier granted to a character via its Ancestry.
+    """
+
+    __tablename__ = "ancestry_modifier"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ancestry_id = Column(Integer, ForeignKey("ancestry.id"), nullable=False)
+    name = Column(String, nullable=False)
+    target = Column(String, nullable=False)
+    absolute_value = Column(Integer)
+    relative_value = Column(Integer)
+    multiply_value = Column(Float)
+    new_value = Column(String)
+    description = Column(String, nullable=False)
 
 
 class AncestryTrait(BaseObject):
@@ -113,30 +142,66 @@ class CharacterClassAttributeMap(BaseObject):
     )
 
 
+class Modifier(BaseObject):
+    __tablename__ = "modifier"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    character_id = Column(Integer, ForeignKey("character.id"), nullable=False)
+    target = Column(String, nullable=False)
+    absolute_value = Column(Integer)
+    relative_value = Column(Integer)
+    multiply_value = Column(Float)
+    new_value = Column(String)
+    description = Column(String, nullable=False)
+
+
 class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
     __tablename__ = "character"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, default="New Character", nullable=False)
     armor_class = Column(Integer, default=10, nullable=False, info={"min": 1, "max": 99})
     hit_points = Column(Integer, default=1, nullable=False, info={"min": 0, "max": 999})
-    max_hit_points = Column(Integer, default=1, nullable=False, info={"min": 0, "max": 999})
+    max_hit_points = Column(Integer, default=10, nullable=False, info={"min": 0, "max": 999})
     temp_hit_points = Column(Integer, default=0, nullable=False, info={"min": 0, "max": 999})
-    str = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
-    dex = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
-    con = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
-    int = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
-    wis = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
-    cha = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
+    strength = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
+    dexterity = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
+    constitution = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
+    intelligence = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
+    wisdom = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
+    charisma = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
     proficiencies = Column(String)
 
     class_map = relationship("CharacterClassMap", cascade="all,delete,delete-orphan")
     class_list = association_proxy("class_map", "id", creator=class_map_creator)
+
+    _modifiers = relationship("Modifier", cascade="all,delete,delete-orphan", lazy="immediate")
+    _modify_ok = [
+        "armor_class",
+        "max_hit_points",
+        "strength",
+        "dexterity",
+        "constitution",
+        "intelligence",
+        "wisdom",
+        "charisma",
+        "speed",
+        "size",
+    ]
 
     character_class_attribute_map = relationship("CharacterClassAttributeMap", cascade="all,delete,delete-orphan")
     attribute_list = association_proxy("character_class_attribute_map", "id", creator=attr_map_creator)
 
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"), nullable=False, default="1")
     ancestry = relationship("Ancestry", uselist=False)
+
+    @property
+    def modifiers(self):
+        all_modifiers = defaultdict(list)
+        for mod in self.ancestry.modifiers:
+            all_modifiers[mod.target].append(mod)
+        for mod in self._modifiers:
+            all_modifiers[mod.target].append(mod)
+        return all_modifiers
 
     @property
     def classes(self):
@@ -147,12 +212,44 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
         return self.ancestry.traits
 
     @property
-    def size(self):
-        return self.ancestry.size
+    def AC(self):
+        return self.apply_modifiers("armor_class", self.armor_class)
+
+    @property
+    def HP(self):
+        return self.apply_modifiers("max_hit_points", self.max_hit_points)
+
+    @property
+    def STR(self):
+        return self.apply_modifiers("strength", self.strength)
+
+    @property
+    def DEX(self):
+        return self.apply_modifiers("dexterity", self.dexterity)
+
+    @property
+    def CON(self):
+        return self.apply_modifiers("constitution", self.constitution)
+
+    @property
+    def INT(self):
+        return self.apply_modifiers("intelligence", self.intelligence)
+
+    @property
+    def WIS(self):
+        return self.apply_modifiers("wisdom", self.wisdom)
+
+    @property
+    def CHA(self):
+        return self.apply_modifiers("charisma", self.charisma)
 
     @property
     def speed(self):
-        return self.ancestry.speed
+        return self.apply_modifiers("speed", self.ancestry.speed)
+
+    @property
+    def size(self):
+        return self.apply_modifiers("size", self.ancestry.size)
 
     @property
     def level(self):
@@ -204,3 +301,30 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
                 )
                 return True
         return False
+
+
+    def apply_modifiers(self, target, initial):
+        modifiers = list(reversed(self.modifiers.get(target, [])))
+        if isinstance(initial, int):
+            absolute = [mod for mod in modifiers if mod.absolute_value is not None]
+            if absolute:
+                return absolute[0].absolute_value
+            multiple = [mod for mod in modifiers if mod.multiply_value is not None]
+            if multiple:
+                return int(initial * multiple[0].multiply_value + 0.5)
+            return initial + sum(mod.relative_value for mod in modifiers if mod.relative_value is not None)
+
+        new = [mod for mod in modifiers if mod.new_value is not None]
+        if new:
+            return new[0].new_value
+        return initial
+
+
+
+    def add_modifier(self, modifier):
+        if modifier.absolute_value is not None and modifier.relative_value is not None and modifier.multiple_value:
+            raise AttributeError(f"You must provide only one of absolute, relative, and multiple values {modifier}.")
+        self._modifiers.append(modifier)
+
+    def remove_modifier(self, modifier):
+        self._modifiers = [mod for mod in self._modifiers if mod != modifier]

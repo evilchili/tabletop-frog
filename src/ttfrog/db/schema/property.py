@@ -1,11 +1,10 @@
-from sqlalchemy import Column, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text
 
 from ttfrog.db.base import BaseObject
 
 __all__ = [
     "Skill",
     "Proficiency",
-    "Modifier",
 ]
 
 
@@ -26,14 +25,3 @@ class Proficiency(BaseObject):
 
     def __repr__(self):
         return str(self.name)
-
-
-class Modifier(BaseObject):
-    __tablename__ = "modifier"
-    __table_args__ = (UniqueConstraint("source_table_name", "source_table_id", "value", "type", "target"),)
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    source_table_name = Column(String, index=True, nullable=False)
-    source_table_id = Column(Integer, index=True, nullable=False)
-    value = Column(String, nullable=False)
-    type = Column(String, nullable=False)
-    target = Column(String, nullable=False)
