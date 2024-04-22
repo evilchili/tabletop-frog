@@ -1,16 +1,14 @@
-from collections import defaultdict
-
-from sqlalchemy import Column, Enum, ForeignKey, Integer, Float, String, Text, UniqueConstraint
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm import relationship, validates
+from sqlalchemy.orm import relationship
 
 from ttfrog.db.base import BaseObject, CreatureTypesEnum, SavingThrowsMixin, SizesEnum, SkillsMixin, SlugMixin
+from ttfrog.db.schema.modifiers import Modifier, ModifierMixin
 
 __all__ = [
     "Ancestry",
     "AncestryTrait",
     "AncestryTraitMap",
-    "AncestryModifier",
     "CharacterClassMap",
     "CharacterClassAttributeMap",
     "Character",
@@ -40,10 +38,9 @@ class AncestryTraitMap(BaseObject):
     level = Column(Integer, nullable=False, info={"min": 1, "max": 20})
 
 
-# XXX: Replace this with a many-to-many on the Modifiers table. Will need for proficiecies too.
-class Ancestry(BaseObject):
+class Ancestry(BaseObject, ModifierMixin):
     """
-    A character ancestry ("race"), which has zero or more AncestryTraits.
+    A character ancestry ("race"), which has zero or more AncestryTraits and Modifiers.
     """
 
     __tablename__ = "ancestry"
@@ -52,8 +49,7 @@ class Ancestry(BaseObject):
     creature_type = Column(Enum(CreatureTypesEnum), nullable=False, default="humanoid")
     size = Column(Enum(SizesEnum), nullable=False, default="Medium")
     speed = Column(Integer, nullable=False, default=30, info={"min": 0, "max": 99})
-    _traits = relationship("AncestryTraitMap", lazy="immediate")
-    modifiers = relationship("AncestryModifier", lazy="immediate")
+    _traits = relationship("AncestryTraitMap", cascade="all,delete,delete-orphan", lazy="immediate")
 
     @property
     def traits(self):
@@ -65,31 +61,8 @@ class Ancestry(BaseObject):
             return True
         return False
 
-    def add_modifier(self, modifier):
-        if modifier not in self.modifiers:
-            self.modifiers.append(modifier)
-            return True
-        return False
-
     def __repr__(self):
         return self.name
-
-
-class AncestryModifier(BaseObject):
-    """
-    A modifier granted to a character via its Ancestry.
-    """
-
-    __tablename__ = "ancestry_modifier"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    ancestry_id = Column(Integer, ForeignKey("ancestry.id"), nullable=False)
-    name = Column(String, nullable=False)
-    target = Column(String, nullable=False)
-    absolute_value = Column(Integer)
-    relative_value = Column(Integer)
-    multiply_value = Column(Float)
-    new_value = Column(String)
-    description = Column(String, nullable=False)
 
 
 class AncestryTrait(BaseObject):
@@ -142,20 +115,7 @@ class CharacterClassAttributeMap(BaseObject):
     )
 
 
-class Modifier(BaseObject):
-    __tablename__ = "modifier"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    character_id = Column(Integer, ForeignKey("character.id"), nullable=False)
-    target = Column(String, nullable=False)
-    absolute_value = Column(Integer)
-    relative_value = Column(Integer)
-    multiply_value = Column(Float)
-    new_value = Column(String)
-    description = Column(String, nullable=False)
-
-
-class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
+class Character(BaseObject, ModifierMixin, SlugMixin, SavingThrowsMixin, SkillsMixin):
     __tablename__ = "character"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, default="New Character", nullable=False)
@@ -174,7 +134,6 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
     class_map = relationship("CharacterClassMap", cascade="all,delete,delete-orphan")
     class_list = association_proxy("class_map", "id", creator=class_map_creator)
 
-    _modifiers = relationship("Modifier", cascade="all,delete,delete-orphan", lazy="immediate")
     _modify_ok = [
         "armor_class",
         "max_hit_points",
@@ -196,12 +155,10 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
 
     @property
     def modifiers(self):
-        all_modifiers = defaultdict(list)
-        for mod in self.ancestry.modifiers:
-            all_modifiers[mod.target].append(mod)
-        for mod in self._modifiers:
-            all_modifiers[mod.target].append(mod)
-        return all_modifiers
+        unified = {}
+        unified.update(**self.ancestry.modifiers)
+        unified.update(**super().modifiers)
+        return unified
 
     @property
     def classes(self):
@@ -302,7 +259,6 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
                 return True
         return False
 
-
     def apply_modifiers(self, target, initial):
         modifiers = list(reversed(self.modifiers.get(target, [])))
         if isinstance(initial, int):
@@ -318,13 +274,3 @@ class Character(BaseObject, SlugMixin, SavingThrowsMixin, SkillsMixin):
         if new:
             return new[0].new_value
         return initial
-
-
-
-    def add_modifier(self, modifier):
-        if modifier.absolute_value is not None and modifier.relative_value is not None and modifier.multiple_value:
-            raise AttributeError(f"You must provide only one of absolute, relative, and multiple values {modifier}.")
-        self._modifiers.append(modifier)
-
-    def remove_modifier(self, modifier):
-        self._modifiers = [mod for mod in self._modifiers if mod != modifier]

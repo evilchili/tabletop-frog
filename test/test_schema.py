@@ -113,16 +113,15 @@ def test_ancestries(db):
         assert endurance in porc.traits
 
         # add a +1 STR modifier
-        str_plus_one = schema.AncestryModifier(
+        str_plus_one = schema.Modifier(
             name="STR+1 (Pygmy Orc)",
             target="strength",
             relative_value=1,
-            description="Your Strength score is increased by 1."
+            description="Your Strength score is increased by 1.",
         )
         assert porc.add_modifier(str_plus_one) is True
         assert porc.add_modifier(str_plus_one) is False  # test idempotency
-        db.add_or_update(porc)
-        assert str_plus_one in porc.modifiers
+        assert str_plus_one in porc.modifiers["strength"]
 
         # now create an orc character and assert it gets traits and modifiers
         grognak = schema.Character(name="Grognak the Mighty", ancestry=porc)
@@ -131,7 +130,7 @@ def test_ancestries(db):
 
         # verify the strength bonus is applied
         assert grognak.strength == 10
-        assert str_plus_one in grognak.modifiers['strength']
+        assert str_plus_one in grognak.modifiers["strength"]
         assert grognak.STR == 11
 
 
@@ -145,37 +144,38 @@ def test_modifiers(db, classes_factory, ancestries_factory):
         db.add_or_update(carl)
         assert carl.speed == carl.ancestry.speed == 30
 
+        cold = schema.Modifier(target="speed", relative_value=-10, name="Cold")
+        hasted = schema.Modifier(target="speed", multiply_value=2.0, name="Hasted")
+        slowed = schema.Modifier(target="speed", multiply_value=0.5, name="Slowed")
+        restrained = schema.Modifier(target="speed", absolute_value=0, name="Restrained")
+        reduced = schema.Modifier(target="size", new_value="Tiny", name="Reduced")
+
         # reduce speed by 10
-        cold = schema.Modifier(target="speed", relative_value=-10, description="Cold")
-        carl.add_modifier(cold)
+        assert carl.add_modifier(cold)
         assert carl.speed == 20
 
         # speed is doubled
-        carl.remove_modifier(cold)
-        hasted = schema.Modifier(target="speed", multiply_value=2.0, description="Hasted")
-        carl.add_modifier(hasted)
+        assert carl.remove_modifier(cold)
+        assert carl.add_modifier(hasted)
         assert carl.speed == 60
 
         # speed is halved
-        slowed = schema.Modifier(target="speed", multiply_value=0.5, description="Slowed")
-        carl.remove_modifier(hasted)
-        carl.add_modifier(slowed)
+        assert carl.remove_modifier(hasted)
+        assert carl.add_modifier(slowed)
         assert carl.speed == 15
 
         # speed is 0
-        restrained = schema.Modifier(target="speed", absolute_value=0, description="Restrained")
-        carl.add_modifier(restrained)
+        assert carl.add_modifier(restrained)
         assert carl.speed == 0
 
         # no longer restrained, but still slowed
-        carl.remove_modifier(restrained)
+        assert carl.remove_modifier(restrained)
         assert carl.speed == 15
 
         # back to normal
-        carl.remove_modifier(slowed)
+        assert carl.remove_modifier(slowed)
         assert carl.speed == carl.ancestry.speed
 
         # modifiers can modify string values too
-        carl.add_modifier(schema.Modifier(target="size", new_value="Tiny", description="Reduced"))
+        assert carl.add_modifier(reduced)
         assert carl.size == "Tiny"
-

@@ -59,8 +59,11 @@ class SQLDatabaseManager:
                 tm.abort()
                 raise
 
-    def add_or_update(self, *args, **kwargs):
-        self.session.add(*args, **kwargs)
+    def add_or_update(self, record, *args, **kwargs):
+        if not isinstance(record, list):
+            record = [record]
+        for rec in record:
+            self.session.add(rec, *args, **kwargs)
         self.session.flush()
 
     def query(self, *args, **kwargs):
