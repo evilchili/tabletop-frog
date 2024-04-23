@@ -116,7 +116,7 @@ def dump(context: typer.Context):
     """
     from ttfrog.db.manager import db
 
-    db.init()
+    setup(context)
     print(db.dump(context.args))
 
 

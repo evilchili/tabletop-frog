@@ -34,7 +34,7 @@ class AncestryTraitMap(BaseObject):
     id = Column(Integer, primary_key=True, autoincrement=True)
     ancestry_id = Column(Integer, ForeignKey("ancestry.id"))
     ancestry_trait_id = Column(Integer, ForeignKey("ancestry_trait.id"))
-    trait = relationship("AncestryTrait", lazy="immediate")
+    trait = relationship("AncestryTrait", uselist=False, lazy="immediate")
     level = Column(Integer, nullable=False, info={"min": 1, "max": 20})
 
 
@@ -48,16 +48,31 @@ class Ancestry(BaseObject, ModifierMixin):
     name = Column(String, index=True, unique=True)
     creature_type = Column(Enum(CreatureTypesEnum), nullable=False, default="humanoid")
     size = Column(Enum(SizesEnum), nullable=False, default="Medium")
-    speed = Column(Integer, nullable=False, default=30, info={"min": 0, "max": 99})
+    walk_speed = Column(Integer, nullable=False, default=30, info={"min": 0, "max": 99})
+    _fly_speed = Column(Integer, info={"min": 0, "max": 99})
+    _climb_speed = Column(Integer, info={"min": 0, "max": 99})
+    _swim_speed = Column(Integer, info={"min": 0, "max": 99})
     _traits = relationship("AncestryTraitMap", cascade="all,delete,delete-orphan", lazy="immediate")
 
     @property
     def traits(self):
         return [mapping.trait for mapping in self._traits]
 
+    @property
+    def speed(self):
+        return self.walk_speed
+
+    @property
+    def climb_speed(self):
+        return self._climb_speed or int(self.speed / 2)
+
+    @property
+    def swim_speed(self):
+        return self._swim_speed or int(self.speed / 2)
+
     def add_trait(self, trait, level=1):
-        if trait not in self.traits:
-            self._traits.append(AncestryTraitMap(ancestry_id=self.id, ancestry_trait_id=trait.id, level=level))
+        if trait not in self._traits:
+            self._traits.append(AncestryTraitMap(ancestry_id=self.id, trait=trait, level=level))
             return True
         return False
 
@@ -65,7 +80,7 @@ class Ancestry(BaseObject, ModifierMixin):
         return self.name
 
 
-class AncestryTrait(BaseObject):
+class AncestryTrait(BaseObject, ModifierMixin):
     """
     A trait granted to a character via its Ancestry.
     """
@@ -129,23 +144,13 @@ class Character(BaseObject, ModifierMixin, SlugMixin, SavingThrowsMixin, SkillsM
     intelligence = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
     wisdom = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
     charisma = Column(Integer, nullable=False, default=10, info={"min": 0, "max": 30})
+
+    _vision = Column(Integer, info={"min": 0})
+
     proficiencies = Column(String)
 
     class_map = relationship("CharacterClassMap", cascade="all,delete,delete-orphan")
     class_list = association_proxy("class_map", "id", creator=class_map_creator)
-
-    _modify_ok = [
-        "armor_class",
-        "max_hit_points",
-        "strength",
-        "dexterity",
-        "constitution",
-        "intelligence",
-        "wisdom",
-        "charisma",
-        "speed",
-        "size",
-    ]
 
     character_class_attribute_map = relationship("CharacterClassAttributeMap", cascade="all,delete,delete-orphan")
     attribute_list = association_proxy("character_class_attribute_map", "id", creator=attr_map_creator)
@@ -157,6 +162,8 @@ class Character(BaseObject, ModifierMixin, SlugMixin, SavingThrowsMixin, SkillsM
     def modifiers(self):
         unified = {}
         unified.update(**self.ancestry.modifiers)
+        for trait in self.traits:
+            unified.update(**trait.modifiers)
         unified.update(**super().modifiers)
         return unified
 
@@ -205,8 +212,28 @@ class Character(BaseObject, ModifierMixin, SlugMixin, SavingThrowsMixin, SkillsM
         return self.apply_modifiers("speed", self.ancestry.speed)
 
     @property
+    def climb_speed(self):
+        return self.apply_modifiers("climb_speed", self.ancestry.climb_speed)
+
+    @property
+    def swim_speed(self):
+        return self.apply_modifiers("swim_speed", self.ancestry.swim_speed)
+
+    @property
+    def fly_speed(self):
+        return self.apply_modifiers("fly_speed", self.ancestry._fly_speed)
+
+    @property
     def size(self):
         return self.apply_modifiers("size", self.ancestry.size)
+
+    @property
+    def vision(self):
+        return self.apply_modifiers("vision", self._vision)
+
+    @property
+    def vision_in_darkness(self):
+        return self.apply_modifiers("vision_in_darkness", self.vision if self.vision is not None else 0)
 
     @property
     def level(self):
@@ -228,7 +255,7 @@ class Character(BaseObject, ModifierMixin, SlugMixin, SavingThrowsMixin, SkillsM
             level_in_class = level_in_class[0]
             level_in_class.level = level
         else:
-            self.class_list.append(CharacterClassMap(character_id=self.id, character_class_id=newclass.id, level=level))
+            self.class_list.append(CharacterClassMap(character_id=self.id, character_class=newclass, level=level))
         for lvl in range(1, level + 1):
             if not newclass.attributes_by_level[lvl]:
                 continue
@@ -252,15 +279,15 @@ class Character(BaseObject, ModifierMixin, SlugMixin, SavingThrowsMixin, SkillsM
                 if attribute.name in self.class_attributes:
                     return True
                 self.attribute_list.append(
-                    CharacterClassAttributeMap(
-                        character_id=self.id, class_attribute_id=attribute.id, option_id=option.id
-                    )
+                    CharacterClassAttributeMap(character_id=self.id, class_attribute=attribute, option=option)
                 )
                 return True
         return False
 
     def apply_modifiers(self, target, initial):
         modifiers = list(reversed(self.modifiers.get(target, [])))
+        if initial is None:
+            return initial
         if isinstance(initial, int):
             absolute = [mod for mod in modifiers if mod.absolute_value is not None]
             if absolute:

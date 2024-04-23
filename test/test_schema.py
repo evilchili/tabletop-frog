@@ -97,7 +97,7 @@ def test_ancestries(db):
         porc = schema.Ancestry(
             name="Pygmy Orc",
             size="Small",
-            speed=25,
+            walk_speed=25,
         )
         db.add_or_update(porc)
         assert porc.name == "Pygmy Orc"
@@ -141,7 +141,8 @@ def test_modifiers(db, classes_factory, ancestries_factory):
 
         # no modifiers; speed is ancestry speed
         carl = schema.Character(name="Carl", ancestry=ancestries["elf"])
-        db.add_or_update(carl)
+        marx = schema.Character(name="Marx", ancestry=ancestries["human"])
+        db.add_or_update([carl, marx])
         assert carl.speed == carl.ancestry.speed == 30
 
         cold = schema.Modifier(target="speed", relative_value=-10, name="Cold")
@@ -153,6 +154,9 @@ def test_modifiers(db, classes_factory, ancestries_factory):
         # reduce speed by 10
         assert carl.add_modifier(cold)
         assert carl.speed == 20
+
+        # make sure modifiers only apply to carl. Carl is having a bad day.
+        assert marx.speed == 30
 
         # speed is doubled
         assert carl.remove_modifier(cold)

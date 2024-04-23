@@ -15,10 +15,11 @@ class ModifierMap(BaseObject):
     __tablename__ = "modifier_map"
     __table_args__ = (UniqueConstraint("primary_table_name", "primary_table_id", "modifier_id"),)
     id = Column(Integer, primary_key=True, autoincrement=True)
-    primary_table_name = Column(String, nullable=False)
-    primary_table_id = Column(Integer, nullable=False)
     modifier_id = Column(Integer, ForeignKey("modifier.id"), nullable=False)
     modifier = relationship("Modifier", uselist=False, lazy="immediate")
+
+    primary_table_name = Column(String, nullable=False)
+    primary_table_id = Column(Integer, nullable=False)
 
 
 class Modifier(BaseObject):
@@ -67,8 +68,14 @@ class ModifierMixin:
     def modifier_map(cls):
         return relationship(
             "ModifierMap",
-            primaryjoin=f"ModifierMap.primary_table_id == foreign({cls.__name__}.id)",
+            primaryjoin=(
+                "and_("
+                f"foreign(ModifierMap.primary_table_name)=='{cls.__tablename__}', "
+                f"foreign(ModifierMap.primary_table_id)=={cls.__name__}.id"
+                ")"
+            ),
             cascade="all,delete,delete-orphan",
+            overlaps="modifier_map,modifier_map",
             single_parent=True,
             uselist=True,
             lazy="immediate",
@@ -84,6 +91,7 @@ class ModifierMixin:
     def add_modifier(self, modifier):
         if modifier.absolute_value is not None and modifier.relative_value is not None and modifier.multiple_value:
             raise AttributeError(f"You must provide only one of absolute, relative, and multiple values {modifier}.")
+
         if [mod for mod in self.modifier_map if mod.modifier == modifier]:
             return False
         self.modifier_map.append(
